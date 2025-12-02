@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,7 +64,7 @@ async def authenticate_user(
     return user
 
 
-def create_tokens(user_id: int) -> TokenResponse:
+def create_tokens(user_id: uuid.UUID) -> TokenResponse:
     """Create access and refresh tokens for a user."""
     token_data = {"sub": str(user_id)}
     return TokenResponse(
@@ -86,7 +88,7 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> TokenRes
         raise InvalidCredentialsError("Invalid refresh token")
 
     # Verify user still exists and is active
-    stmt = select(User).where(User.id == int(user_id))
+    stmt = select(User).where(User.id == uuid.UUID(user_id))
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
@@ -96,7 +98,7 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> TokenRes
     return create_tokens(user.id)
 
 
-async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
+async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
     """Get user by ID."""
     stmt = select(User).where(User.id == user_id)
     result = await db.execute(stmt)

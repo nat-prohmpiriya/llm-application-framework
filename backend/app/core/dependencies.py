@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import AsyncGenerator
 
 from fastapi import Depends
@@ -24,7 +25,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def get_current_user_id(
     token: str | None = Depends(oauth2_scheme),
-) -> int:
+) -> uuid.UUID:
     """
     Dependency to get current user ID from JWT token.
 
@@ -46,12 +47,12 @@ async def get_current_user_id(
     if not user_id:
         raise InvalidCredentialsError("Invalid token")
 
-    return int(user_id)
+    return uuid.UUID(user_id)
 
 
 async def get_optional_user_id(
     token: str | None = Depends(oauth2_scheme),
-) -> int | None:
+) -> uuid.UUID | None:
     """
     Dependency to get current user ID if authenticated.
     Returns None if not authenticated (no exception raised).
@@ -70,11 +71,11 @@ async def get_optional_user_id(
     if not user_id:
         return None
 
-    return int(user_id)
+    return uuid.UUID(user_id)
 
 
 async def get_current_user(
-    user_id: int = Depends(get_current_user_id),
+    user_id: uuid.UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """

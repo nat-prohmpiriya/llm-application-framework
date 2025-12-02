@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -21,7 +23,7 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     """Schema for user response."""
 
-    id: int
+    id: uuid.UUID
     email: str
     username: str
     first_name: str | None

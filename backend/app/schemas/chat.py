@@ -1,5 +1,6 @@
 """Chat request and response schemas."""
 
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -9,7 +10,7 @@ class ChatRequest(BaseModel):
     """Chat request schema."""
 
     message: str = Field(..., min_length=1, max_length=32000)
-    conversation_id: str | None = None
+    conversation_id: uuid.UUID | None = None
     model: str | None = None  # Override default model
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int | None = Field(default=None, ge=1, le=128000)
@@ -58,7 +59,7 @@ class ChatResponse(BaseModel):
     message: ChatMessage
     model: str
     usage: UsageInfo | None = None
-    conversation_id: str | None = None
+    conversation_id: uuid.UUID | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

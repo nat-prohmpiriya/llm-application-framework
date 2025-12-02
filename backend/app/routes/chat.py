@@ -2,19 +2,22 @@
 
 import json
 import logging
+import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.context import get_context
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
 from app.providers.llm import ChatMessage as LLMChatMessage
 from app.providers.llm import llm_client
 from app.schemas.base import BaseResponse
-from app.schemas.chat import ChatMessage, ChatRequest, ChatResponse
+from app.schemas.chat import ChatMessage, ChatRequest, ChatResponse, UsageInfo
+from app.services import conversation as conversation_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -145,25 +148,81 @@ async def get_models(
 ) -> BaseResponse[ModelsResponse]:
     """
     Get available models for chat.
-    
+
     Requires authentication.
     """
     ctx = get_context()
     ctx.user_id = current_user.id
-    
+
     return BaseResponse(
         trace_id=ctx.trace_id,
         data=ModelsResponse(models=AVAILABLE_MODELS),
     )
 
 
+async def get_or_create_conversation(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    conversation_id: uuid.UUID | None,
+) -> uuid.UUID:
+    """Get existing conversation or create a new one."""
+    if conversation_id:
+        # Verify the conversation exists and belongs to user
+        await conversation_service.get_conversation_simple(
+            db=db,
+            conversation_id=conversation_id,
+            user_id=user_id,
+        )
+        return conversation_id
+    else:
+        # Create a new conversation
+        conversation = await conversation_service.create_conversation(
+            db=db,
+            user_id=user_id,
+            title=None,  # Title will be set later or auto-generated
+        )
+        return conversation.id
+
+
+async def build_messages_from_history(
+    db: AsyncSession,
+    conversation_id: uuid.UUID,
+    user_id: uuid.UUID,
+    new_message: str,
+) -> list[LLMChatMessage]:
+    """Build message list from conversation history plus new message."""
+    messages: list[LLMChatMessage] = []
+
+    # Get existing messages from conversation
+    history = await conversation_service.get_conversation_messages(
+        db=db,
+        conversation_id=conversation_id,
+        user_id=user_id,
+    )
+
+    # Add history messages
+    for msg in history:
+        messages.append(
+            LLMChatMessage(role=msg.role.value, content=msg.content)
+        )
+
+    # Add new user message
+    messages.append(LLMChatMessage(role="user", content=new_message))
+
+    return messages
+
+
 @router.post("")
 async def chat(
     data: ChatRequest,
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> BaseResponse[ChatResponse]:
     """
     Send a chat message and get a response (non-streaming).
+
+    If conversation_id is not provided, a new conversation will be created.
+    Messages are saved to the database.
 
     Requires authentication.
     """
@@ -176,12 +235,34 @@ async def chat(
     })
 
     try:
-        # Build messages list (simple for now, later add conversation history)
-        messages = [
-            LLMChatMessage(role="user", content=data.message),
-        ]
+        # Get or create conversation
+        conversation_id = await get_or_create_conversation(
+            db=db,
+            user_id=current_user.id,
+            conversation_id=data.conversation_id,
+        )
 
-        # Call LLM
+        # Save user message to DB
+        await conversation_service.add_message(
+            db=db,
+            conversation_id=conversation_id,
+            role="user",
+            content=data.message,
+        )
+
+        # Build messages list from history
+        messages = await build_messages_from_history(
+            db=db,
+            conversation_id=conversation_id,
+            user_id=current_user.id,
+            new_message=data.message,
+        )
+
+        # Remove the last message since we already added it
+        messages = messages[:-1]
+        messages.append(LLMChatMessage(role="user", content=data.message))
+
+        # Call LLM with user_id for usage tracking
         response = await llm_client.chat_completion(
             messages=messages,
             model=data.model,
@@ -190,9 +271,21 @@ async def chat(
             top_p=data.top_p,
             frequency_penalty=data.frequency_penalty,
             presence_penalty=data.presence_penalty,
+            user=str(current_user.id),
+        )
+
+        # Save assistant message to DB
+        tokens_used = response.usage.get("total_tokens") if response.usage else None
+        await conversation_service.add_message(
+            db=db,
+            conversation_id=conversation_id,
+            role="assistant",
+            content=response.content,
+            tokens_used=tokens_used,
         )
 
         # Build response
+        usage_info = UsageInfo(**response.usage) if response.usage else None
         chat_response = ChatResponse(
             message=ChatMessage(
                 role=response.role,
@@ -200,8 +293,8 @@ async def chat(
                 created_at=datetime.utcnow(),
             ),
             model=response.model,
-            usage=response.usage,
-            conversation_id=data.conversation_id,
+            usage=usage_info,
+            conversation_id=conversation_id,
         )
 
         return BaseResponse(
@@ -218,9 +311,13 @@ async def chat(
 async def chat_stream(
     data: ChatRequest,
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Send a chat message and get a streaming response (SSE).
+
+    If conversation_id is not provided, a new conversation will be created.
+    Messages are saved to the database.
 
     Requires authentication.
     Returns Server-Sent Events with X-Trace-Id header.
@@ -233,14 +330,40 @@ async def chat_stream(
         "message_length": len(data.message),
     })
 
-    async def event_generator():
-        try:
-            # Build messages list
-            messages = [
-                LLMChatMessage(role="user", content=data.message),
-            ]
+    # Get or create conversation before streaming starts
+    conversation_id = await get_or_create_conversation(
+        db=db,
+        user_id=current_user.id,
+        conversation_id=data.conversation_id,
+    )
 
-            # Stream response
+    # Save user message to DB
+    await conversation_service.add_message(
+        db=db,
+        conversation_id=conversation_id,
+        role="user",
+        content=data.message,
+    )
+
+    # Build messages list from history
+    messages = await build_messages_from_history(
+        db=db,
+        conversation_id=conversation_id,
+        user_id=current_user.id,
+        new_message=data.message,
+    )
+
+    # Remove duplicate user message
+    messages = messages[:-1]
+    messages.append(LLMChatMessage(role="user", content=data.message))
+
+    # Get user_id for closure
+    user_id_str = str(current_user.id)
+
+    async def event_generator():
+        full_response = ""
+        try:
+            # Stream response with user_id for usage tracking
             async for chunk in llm_client.chat_completion_stream(
                 messages=messages,
                 model=data.model,
@@ -249,13 +372,29 @@ async def chat_stream(
                 top_p=data.top_p,
                 frequency_penalty=data.frequency_penalty,
                 presence_penalty=data.presence_penalty,
+                user=user_id_str,
             ):
+                full_response += chunk
                 # SSE format: data: {"content": "...", "done": false}
-                event_data = json.dumps({"content": chunk, "done": False})
+                event_data = json.dumps({
+                    "content": chunk,
+                    "done": False,
+                    "conversation_id": str(conversation_id),
+                })
                 yield f"data: {event_data}\n\n"
 
+            # Save assistant message after streaming completes
+            # Note: We can't get token count from streaming response
+            await conversation_service.add_message(
+                db=db,
+                conversation_id=conversation_id,
+                role="assistant",
+                content=full_response,
+                tokens_used=None,
+            )
+
             # Send done signal
-            yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
+            yield f"data: {json.dumps({'content': '', 'done': True, 'conversation_id': str(conversation_id)})}\n\n"
 
         except Exception as e:
             logger.error(f"Chat stream error: {e}")

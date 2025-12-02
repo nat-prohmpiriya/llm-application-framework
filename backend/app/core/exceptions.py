@@ -14,10 +14,20 @@ class AppException(Exception):
 class NotFoundError(AppException):
     """Resource not found."""
 
-    def __init__(self, resource: str, id: int | str):
+    def __init__(self, message: str = "Resource not found"):
         super().__init__(
-            message=f"{resource} with id {id} not found",
+            message=message,
             status_code=404,
+        )
+
+
+class ForbiddenError(AppException):
+    """Access forbidden."""
+
+    def __init__(self, message: str = "Access forbidden"):
+        super().__init__(
+            message=message,
+            status_code=403,
         )
 
 

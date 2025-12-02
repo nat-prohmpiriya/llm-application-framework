@@ -30,7 +30,8 @@ class Conversation(Base, TimestampMixin):
         nullable=True,
         index=True,
     )
-    user_id: Mapped[int] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

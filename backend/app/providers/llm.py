@@ -76,6 +76,7 @@ class LLMClient:
         top_p: float | None = None,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
+        user: str | None = None,
         **kwargs: Any,
     ) -> ChatCompletionResponse:
         """
@@ -89,6 +90,7 @@ class LLMClient:
             top_p: Nucleus sampling parameter
             frequency_penalty: Frequency penalty for token repetition
             presence_penalty: Presence penalty for new topics
+            user: User identifier for usage tracking
             **kwargs: Additional parameters
 
         Returns:
@@ -97,13 +99,15 @@ class LLMClient:
         model = model or self.default_model
         url = f"{self.base_url}/chat/completions"
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": model,
             "messages": self._format_messages(messages),
             "temperature": temperature,
             "stream": False,
             **kwargs,
         }
+        if user is not None:
+            payload["user"] = user
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
         if top_p is not None:
@@ -160,6 +164,7 @@ class LLMClient:
         top_p: float | None = None,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
+        user: str | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         """
@@ -173,6 +178,7 @@ class LLMClient:
             top_p: Nucleus sampling parameter
             frequency_penalty: Frequency penalty for token repetition
             presence_penalty: Presence penalty for new topics
+            user: User identifier for usage tracking
             **kwargs: Additional parameters
 
         Yields:
@@ -181,13 +187,15 @@ class LLMClient:
         model = model or self.default_model
         url = f"{self.base_url}/chat/completions"
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": model,
             "messages": self._format_messages(messages),
             "temperature": temperature,
             "stream": True,
             **kwargs,
         }
+        if user is not None:
+            payload["user"] = user
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
         if top_p is not None:
