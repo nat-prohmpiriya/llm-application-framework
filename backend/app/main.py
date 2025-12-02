@@ -9,7 +9,7 @@ from app.core.context import get_context
 from app.core.exceptions import AppException
 from app.core.telemetry import instrument_app, setup_telemetry
 from app.middleware import TraceContextMiddleware
-from app.routes import auth, health
+from app.routes import auth, chat, health
 from app.schemas.base import ErrorResponse
 
 
@@ -64,6 +64,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 # Routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(auth.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")
 
 
 @app.get("/")
