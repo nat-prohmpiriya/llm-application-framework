@@ -21,6 +21,7 @@ class ChunkResult(BaseModel):
     id: uuid.UUID
     document_id: uuid.UUID
     content: str
+    chunk_index: int
     score: float = Field(description="Similarity score (cosine distance, lower is better)")
     metadata: dict | None = None
 

@@ -153,13 +153,14 @@
 					streamingContent += content;
 					scrollToBottom();
 				},
-				(newConversationId) => {
-					// On done - add assistant message
+				(newConversationId, sources) => {
+					// On done - add assistant message with sources
 					const assistantMessage: Message = {
 						id: crypto.randomUUID(),
 						role: 'assistant',
 						content: streamingContent,
-						createdAt: new Date()
+						createdAt: new Date(),
+						sources: sources
 					};
 					messages = [...messages, assistantMessage];
 					streamingContent = '';

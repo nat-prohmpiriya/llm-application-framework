@@ -35,6 +35,7 @@ async def retrieve_context(
     query: str,
     user_id: uuid.UUID,
     top_k: int = 5,
+    document_ids: list[uuid.UUID] | None = None,
 ) -> list[ChunkResult]:
     """
     Retrieve relevant document chunks for a query.
@@ -44,6 +45,8 @@ async def retrieve_context(
         query: User query text
         user_id: User ID for filtering documents
         top_k: Number of chunks to retrieve
+        document_ids: Optional list of document IDs to scope the search.
+                     If None, search all user's documents.
 
     Returns:
         List of relevant chunks with scores
@@ -60,9 +63,10 @@ async def retrieve_context(
         query_embedding=query_embedding,
         top_k=top_k,
         user_id=user_id,
+        document_ids=document_ids,
     )
 
-    logger.info(f"Retrieved {len(chunks)} chunks for query")
+    logger.info(f"Retrieved {len(chunks)} chunks for query (scoped to {len(document_ids) if document_ids else 'all'} docs)")
     return chunks
 
 
@@ -121,15 +125,16 @@ def format_sources(
         List of source info dictionaries
     """
     sources = []
-    seen_docs = set()
 
     for chunk in chunks:
-        if chunk.document_id not in seen_docs:
-            seen_docs.add(chunk.document_id)
-            sources.append({
-                "document_id": str(chunk.document_id),
-                "filename": doc_names.get(chunk.document_id, "Unknown"),
-                "relevance_score": 1 - chunk.score,  # Convert distance to similarity
-            })
+        # Truncate content for preview (max 500 chars)
+        content_preview = chunk.content[:500] + "..." if len(chunk.content) > 500 else chunk.content
+        sources.append({
+            "document_id": str(chunk.document_id),
+            "filename": doc_names.get(chunk.document_id, "Unknown"),
+            "chunk_index": chunk.chunk_index,
+            "score": 1 - chunk.score,  # Convert distance to similarity
+            "content": content_preview,
+        })
 
     return sources

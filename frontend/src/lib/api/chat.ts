@@ -70,6 +70,7 @@ export interface StreamChunk {
 	done: boolean;
 	error?: string;
 	conversation_id?: string;
+	sources?: SourceInfo[];
 }
 
 export const chatApi = {
@@ -98,7 +99,7 @@ export const chatApi = {
 	stream: async (
 		data: ChatRequest,
 		onChunk: (content: string) => void,
-		onDone: (conversationId?: string) => void,
+		onDone: (conversationId?: string, sources?: SourceInfo[]) => void,
 		onError: (error: string) => void
 	): Promise<{ traceId: string | null; conversationId: string | null }> => {
 		const token = localStorage.getItem('access_token');
@@ -157,7 +158,7 @@ export const chatApi = {
 							return { traceId, conversationId };
 						}
 						if (data.done) {
-							onDone(conversationId || undefined);
+							onDone(conversationId || undefined, data.sources);
 							return { traceId, conversationId };
 						}
 						if (data.content) {
@@ -170,7 +171,7 @@ export const chatApi = {
 			}
 		}
 
-		onDone(conversationId || undefined);
+		onDone(conversationId || undefined, undefined);
 		return { traceId, conversationId };
 	},
 };

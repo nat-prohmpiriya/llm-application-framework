@@ -191,6 +191,7 @@ async def chat(
                 query=data.message,
                 user_id=current_user.id,
                 top_k=data.rag_top_k,
+                document_ids=data.rag_document_ids,
             )
             if chunks:
                 # Build RAG system prompt
@@ -209,7 +210,9 @@ async def chat(
                     SourceInfo(
                         document_id=str(info["document_id"]),
                         filename=info["filename"],
-                        relevance_score=info["relevance_score"],
+                        chunk_index=info["chunk_index"],
+                        score=info["score"],
+                        content=info["content"],
                     )
                     for info in rag_service.format_sources(chunks, doc_names)
                 ]
@@ -318,6 +321,7 @@ async def chat_stream(
             query=data.message,
             user_id=current_user.id,
             top_k=data.rag_top_k,
+            document_ids=data.rag_document_ids,
         )
         if chunks:
             # Build RAG system prompt

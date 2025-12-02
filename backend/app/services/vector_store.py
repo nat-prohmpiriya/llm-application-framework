@@ -36,6 +36,7 @@ class VectorStore(ABC):
         query_embedding: list[float],
         top_k: int,
         user_id: uuid.UUID,
+        document_ids: list[uuid.UUID] | None = None,
     ) -> list[ChunkResult]:
         """
         Search for similar chunks using vector similarity.
@@ -45,6 +46,7 @@ class VectorStore(ABC):
             query_embedding: Query embedding vector
             top_k: Number of results to return
             user_id: User ID to filter documents by ownership
+            document_ids: Optional list of document IDs to scope the search
 
         Returns:
             List of chunk results sorted by similarity
@@ -92,8 +94,18 @@ class PgVectorStore(VectorStore):
         query_embedding: list[float],
         top_k: int,
         user_id: uuid.UUID,
+        document_ids: list[uuid.UUID] | None = None,
     ) -> list[ChunkResult]:
-        """Search for similar chunks using cosine distance."""
+        """Search for similar chunks using cosine distance.
+
+        Args:
+            db: Database session
+            query_embedding: Query embedding vector
+            top_k: Number of results to return
+            user_id: User ID to filter documents by ownership
+            document_ids: Optional list of document IDs to scope the search.
+                         If None, search all user's documents.
+        """
         # Use pgvector's cosine distance operator (<=>)
         # Lower distance = higher similarity
         distance = DocumentChunk.embedding.cosine_distance(query_embedding)
@@ -103,15 +115,20 @@ class PgVectorStore(VectorStore):
                 DocumentChunk.id,
                 DocumentChunk.document_id,
                 DocumentChunk.content,
+                DocumentChunk.chunk_index,
                 DocumentChunk.metadata_.label("metadata"),
                 distance.label("score"),
             )
             .join(Document, DocumentChunk.document_id == Document.id)
             .where(Document.user_id == user_id)
             .where(DocumentChunk.embedding.isnot(None))
-            .order_by(distance)
-            .limit(top_k)
         )
+
+        # Optional: Filter by specific documents
+        if document_ids:
+            stmt = stmt.where(Document.id.in_(document_ids))
+
+        stmt = stmt.order_by(distance).limit(top_k)
 
         result = await db.execute(stmt)
         rows = result.all()
@@ -121,6 +138,7 @@ class PgVectorStore(VectorStore):
                 id=row.id,
                 document_id=row.document_id,
                 content=row.content,
+                chunk_index=row.chunk_index,
                 score=row.score,
                 metadata=row.metadata,
             )

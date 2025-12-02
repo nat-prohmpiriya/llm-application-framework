@@ -20,6 +20,10 @@ class ChatRequest(BaseModel):
     stream: bool = False
     use_rag: bool = Field(default=False, description="Enable RAG to use uploaded documents")
     rag_top_k: int = Field(default=5, ge=1, le=20, description="Number of document chunks to retrieve")
+    rag_document_ids: list[uuid.UUID] | None = Field(
+        default=None,
+        description="Optional list of document IDs to scope RAG search. If None, search all user's documents."
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -32,6 +36,7 @@ class ChatRequest(BaseModel):
                 "stream": False,
                 "use_rag": False,
                 "rag_top_k": 5,
+                "rag_document_ids": None,
             }
         }
     )
@@ -62,7 +67,9 @@ class SourceInfo(BaseModel):
 
     document_id: str
     filename: str
-    relevance_score: float = Field(description="Similarity score (0-1, higher is better)")
+    chunk_index: int
+    score: float = Field(description="Similarity score (0-1, higher is better)")
+    content: str = Field(description="Chunk content preview")
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FileText, ChevronDown, ChevronUp } from 'lucide-svelte';
+	import { FileText, ChevronDown, ChevronUp, ExternalLink } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { SourceInfo } from '$lib/api/chat';
 
@@ -24,6 +24,10 @@
 
 	function formatScore(score: number): string {
 		return (score * 100).toFixed(0) + '%';
+	}
+
+	function getDocumentUrl(documentId: string): string {
+		return `/documents?doc=${documentId}`;
 	}
 </script>
 
@@ -53,9 +57,19 @@
 					{#if isExpanded}
 						<div class="border-t bg-background p-2">
 							<p class="whitespace-pre-wrap text-muted-foreground">{source.content}</p>
-							<p class="mt-1 text-[10px] text-muted-foreground/70">
-								Chunk #{source.chunk_index}
-							</p>
+							<div class="mt-2 flex items-center justify-between">
+								<p class="text-[10px] text-muted-foreground/70">
+									Chunk #{source.chunk_index}
+								</p>
+								<a
+									href={getDocumentUrl(source.document_id)}
+									class="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
+									onclick={(e) => e.stopPropagation()}
+								>
+									<ExternalLink class="size-3" />
+									View document
+								</a>
+							</div>
 						</div>
 					{/if}
 				</div>

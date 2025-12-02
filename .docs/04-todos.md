@@ -17,14 +17,14 @@
 |-----------|--------|-------|
 | LiteLLM Proxy | ✅ Done | Running on port 4000, UI available |
 | Frontend (SvelteKit) | ✅ Done | Svelte 5 + Tailwind v4 + shadcn-svelte (Phase 1 Complete) |
-| Backend (FastAPI) | ✅ Done | Auth + Chat API (Phase 1 Complete) |
-| PostgreSQL | ✅ Done | Running in docker |
+| Backend (FastAPI) | ✅ Done | Auth + Chat + RAG API (Phase 2 Complete) |
+| PostgreSQL + pgvector | ✅ Done | Running in docker with vector support |
 | Redis | ✅ Done | Running for LiteLLM cache |
-| ChromaDB | ❌ Not Started | - |
+| Vector Store | ✅ Done | pgvector (replaced ChromaDB) |
 | Auth System | ✅ Done | JWT + refresh token |
 | Chat System | ✅ Done | Streaming, History, Settings, Markdown |
 | Conversation API | ✅ Done | CRUD + Messages |
-| RAG Pipeline | ❌ Not Started | - |
+| RAG Pipeline | ✅ Done | Document upload, chunking, embedding, retrieval |
 | PII Protection | ❌ Not Started | Presidio integration |
 | Agent System | ❌ Not Started | - |
 | Text-to-SQL | ❌ Not Started | Schema Linking + User Confirm |
@@ -126,42 +126,42 @@
 ## Phase 2: RAG Core (Document & Retrieval)
 
 ### 2.1 Document Processing
-- [ ] Setup ChromaDB in docker-compose
-- [ ] Create document upload endpoint
-- [ ] Implement file validation (PDF, DOCX, TXT, MD, CSV)
-- [ ] Integrate PDF text extraction (PyMuPDF / pdfplumber)
-- [ ] Integrate DOCX text extraction (python-docx)
-- [ ] Create text chunking service (recursive splitter)
-- [ ] Add metadata extraction
+- [x] Setup pgvector in PostgreSQL (replaced ChromaDB)
+- [x] Create document upload endpoint
+- [x] Implement file validation (PDF, DOCX, TXT, MD, CSV)
+- [x] Integrate PDF text extraction (PyMuPDF)
+- [x] Integrate DOCX text extraction (python-docx)
+- [x] Create text chunking service (recursive splitter)
+- [x] Add metadata extraction
 
 ### 2.2 Embedding & Vector Store
-- [ ] Setup sentence-transformers
-- [ ] Download multilingual-e5-base model
-- [ ] Create embedding service
-- [ ] Implement ChromaDB collection per project
-- [ ] Create document indexing pipeline
-- [ ] Implement document deletion (remove from vector store)
+- [x] Setup LiteLLM embedding API (replaced sentence-transformers)
+- [x] Use Gemini text-embedding-004 model (768 dims)
+- [x] Create embedding service
+- [x] Implement pgvector for vector storage (replaced ChromaDB)
+- [x] Create document indexing pipeline
+- [x] Implement document deletion (remove from vector store)
 
 ### 2.3 Retrieval Pipeline
-- [ ] Implement dense search (embedding similarity)
+- [x] Implement dense search (cosine similarity with pgvector)
 - [ ] Implement hybrid search (Dense + BM25) - optional
-- [ ] Create query preprocessing
-- [ ] Implement context assembly
+- [x] Create query preprocessing
+- [x] Implement context assembly
 - [ ] Add re-ranking (optional)
-- [ ] Create RAG prompt template
+- [x] Create RAG prompt template
 
 ### 2.4 Source Citations
-- [ ] Track source documents in retrieval
-- [ ] Include sources in LLM response
-- [ ] Parse and display sources in frontend
-- [ ] Link to original document/page
+- [x] Track source documents in retrieval
+- [x] Include sources in LLM response
+- [x] Parse and display sources in frontend
+- [x] Link to original document/page
 
 ### 2.5 Document Management UI
-- [ ] Create document list component
-- [ ] Implement document upload UI (drag & drop)
-- [ ] Show upload progress
-- [ ] Display document status (processing, ready, error)
-- [ ] Implement document delete UI
+- [x] Create document list component
+- [x] Implement document upload UI (drag & drop)
+- [x] Show upload progress
+- [x] Display document status (processing, ready, error)
+- [x] Implement document delete UI
 
 **Phase 2 Deliverable**: User can upload documents and ask questions with RAG
 
@@ -400,13 +400,13 @@
 8. **Phase 8** - Polish (Production-ready)
 
 ### Current Focus
-> **Phase 1 Complete!** Chat system fully functional with history, streaming, markdown.
-> **Next Step**: Phase 2 (RAG Core) - Setup ChromaDB and document processing
+> **Phase 2 Complete!** RAG pipeline fully working with Source Citations UI.
+> **Next Step**: Phase 4 (Agent System) or Phase 5 (Text-to-SQL)
 
 ### Blockers
 - None currently
 
 ---
 
-*Last updated: December 2, 2024*
+*Last updated: December 3, 2024*
 *Synced with spec v3.0*
