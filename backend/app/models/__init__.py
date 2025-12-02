@@ -5,6 +5,8 @@ from app.models.user import User
 from app.models.project import Project, PrivacyLevel
 from app.models.conversation import Conversation
 from app.models.message import Message, MessageRole
+from app.models.document import Document, DocumentStatus
+from app.models.chunk import DocumentChunk
 
 __all__ = [
     "TimestampMixin",
@@ -14,4 +16,7 @@ __all__ = [
     "Conversation",
     "Message",
     "MessageRole",
+    "Document",
+    "DocumentStatus",
+    "DocumentChunk",
 ]

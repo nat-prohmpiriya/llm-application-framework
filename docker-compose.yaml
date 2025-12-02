@@ -7,7 +7,7 @@ services:
   # Backend Database (PostgreSQL)
   # ===========================================
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: ragagent-postgres
     restart: unless-stopped
     ports:
@@ -99,9 +99,9 @@ services:
     networks:
       - app-network
 
-  # LiteLLM Database
+  # LiteLLM Database (also used by backend)
   litellm-db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: ragagent-litellm-db
     restart: unless-stopped
     ports:

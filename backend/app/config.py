@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
 
+    # Storage
+    storage_type: str = "local"
+    storage_local_path: str = "./uploads"
+
+    # Embedding
+    embedding_model: str = "intfloat/multilingual-e5-base"
+
     @property
     def is_development(self) -> bool:
         return self.app_env == "development"
