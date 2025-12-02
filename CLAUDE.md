@@ -1,39 +1,90 @@
-# RAG Agent Platform - Claude Instructions
+# RAG Agent Platform - Claude Code Instructions
+
+## Quick Reference
+
+Load context as needed to reduce tokens:
+
+| Context Needed | File to Read |
+|----------------|--------------|
+| **Frontend (Svelte 5)** | `.claude/frontend.md` |
+| **Backend (FastAPI)** | `.claude/backend.md` |
+| **API Routes** | `.claude/api-routes.md` |
+| **Services Layer** | `.claude/services.md` |
+| **Testing** | `.claude/testing.md` |
+| **Full Spec** | `.docs/02-spec.md` |
+| **Todo List** | `.docs/04-todos.md` |
 
 ## Project Overview
-This is a RAG (Retrieval-Augmented Generation) Agent Platform built with:
-- **Frontend**: SvelteKit + Tailwind CSS + Inlang (i18n)
-- **Backend**: FastAPI (Python)
-- **LLM Proxy**: LiteLLM
-- **Database**: PostgreSQL
-- **Vector Store**: ChromaDB
+
+**RAG Agent Platform** - Full-stack AI document retrieval & chat system.
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | SvelteKit 2.x + Svelte 5 (Runes) + Tailwind v4 + shadcn-svelte |
+| Backend | FastAPI + Python 3.12+ + SQLAlchemy async + PostgreSQL |
+| LLM | LiteLLM Proxy (OpenAI, Gemini, Groq) |
+| Vector | ChromaDB |
+| Auth | JWT + Refresh Token |
+| Tracing | OpenTelemetry + Jaeger |
 
 ## Directory Structure
-- `/frontend` - SvelteKit frontend application
-- `/backend` - FastAPI backend (not started)
-- `/litellm-container` - LiteLLM Docker setup
-- `/.docs` - Project documentation
 
-## Task Tracking Rules
-
-### IMPORTANT: Update Todo List After Completing Tasks
-When you complete any task that corresponds to an item in `.docs/04-todos.md`:
-1. **Immediately update the todo list** by changing `[ ]` to `[x]`
-2. Update the progress overview table if a component status changes
-3. Update the "Current Focus" section if needed
-
-### Example
-Before:
 ```
-- [ ] Setup PostgreSQL in docker-compose
+/
+├── frontend/          # SvelteKit app
+├── backend/           # FastAPI app
+├── infra/             # Docker configs
+├── .docs/             # Specifications
+└── .claude/           # Detailed instructions (load as needed)
 ```
 
-After completing:
-```
-- [x] Setup PostgreSQL in docker-compose
+## Critical Rules
+
+### Svelte 5 (MUST USE)
+```svelte
+<!-- ✅ Correct -->
+let count = $state(0);
+let doubled = $derived(count * 2);
+let { name } = $props();
+{@render children()}
+
+<!-- ❌ Wrong (Svelte 4) -->
+let count = 0;
+$: doubled = count * 2;
+export let name;
+<slot />
 ```
 
-## Development Guidelines
-- Always write code and comments in English
-- Follow existing code style and patterns
-- Test changes before marking tasks complete
+### Python Type Hints (MUST USE)
+```python
+# ✅ Correct
+async def get_user(user_id: int) -> User | None:
+    ...
+
+# ❌ Wrong
+async def get_user(user_id):
+    ...
+```
+
+### API Response (MUST WRAP)
+```python
+return BaseResponse(trace_id=ctx.trace_id, data=UserResponse.model_validate(user))
+```
+
+## Commands
+
+```bash
+# Backend
+cd backend && uv run uvicorn app.main:app --reload
+
+# Frontend
+cd frontend && npm run dev
+
+# Docker
+docker-compose up -d
+```
+
+## Task Tracking
+
+When completing tasks, update `.docs/04-todos.md`:
+- Change `[ ]` to `[x]` for completed items
