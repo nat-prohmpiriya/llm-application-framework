@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { parseMarkdown } from '$lib/utils';
+	import { UserIcon, AssistantIcon } from '$lib/components/icons';
 
 	let { message, isUser = false, isStreaming = false } = $props<{
 		message: string;
@@ -12,10 +13,18 @@
 </script>
 
 <div class="flex gap-3 {isUser ? 'flex-row-reverse' : ''}">
-	<!-- Avatar -->
+	<!-- Avatar / Icon -->
 	<Avatar.Root class="h-8 w-8 shrink-0">
-		<Avatar.Fallback class={isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
-			{isUser ? 'U' : 'AI'}
+		<Avatar.Fallback
+			class={isUser
+				? 'bg-primary text-primary-foreground flex items-center justify-center'
+				: 'bg-muted flex items-center justify-center'}
+		>
+			{#if isUser}
+				<UserIcon className="h-4 w-4" />
+			{:else}
+				<AssistantIcon className="h-4 w-4" />
+			{/if}
 		</Avatar.Fallback>
 	</Avatar.Root>
 
@@ -35,7 +44,9 @@
 			<p class="whitespace-pre-wrap m-0 text-sm">{message}</p>
 		{:else}
 			<!-- Markdown rendered content -->
-			<div class="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-pre:my-2 prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-code:before:content-none prose-code:after:content-none">
+			<div
+				class="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-pre:my-2 prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-code:before:content-none prose-code:after:content-none"
+			>
 				{@html htmlContent}
 			</div>
 		{/if}

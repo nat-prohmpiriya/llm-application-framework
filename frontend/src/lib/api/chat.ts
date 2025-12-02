@@ -3,11 +3,32 @@ import { ApiException } from '$lib/types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+export interface ModelInfo {
+	id: string;
+	name: string;
+	provider: string;
+	description?: string;
+	context_window?: number;
+	input_price?: number;
+	output_price?: number;
+	tier?: 'free' | 'pro' | 'enterprise';
+	model_page_url?: string;
+	pricing_url?: string;
+	terms_url?: string;
+	privacy_url?: string;
+	website_url?: string;
+}
+
+export interface ModelsResponse {
+	models: ModelInfo[];
+}
+
 export interface ChatRequest {
 	message: string;
 	conversation_id?: string;
 	model?: string;
 	temperature?: number;
+	max_tokens?: number;
 	stream?: boolean;
 }
 
@@ -37,6 +58,15 @@ export interface StreamChunk {
 }
 
 export const chatApi = {
+	/**
+	 * Get available models
+	 */
+	getModels: async (): Promise<ModelsResponse> => {
+		return fetchApi<ModelsResponse>('/api/chat/models', {
+			method: 'GET',
+		});
+	},
+
 	/**
 	 * Send chat message (non-streaming)
 	 */
