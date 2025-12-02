@@ -5,12 +5,16 @@
 		SlidersHorizontal,
 		Plus,
 		MoreHorizontal,
-		Check
+		Check,
+		FileText
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Switch } from '$lib/components/ui/switch';
+	import { Label } from '$lib/components/ui/label';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Popover from '$lib/components/ui/popover';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import ModelSelector from './ModelSelector.svelte';
 	import ModelConfig, { type ModelConfigValues } from './ModelConfig.svelte';
 	import type { ModelInfo } from '$lib/api/chat';
@@ -26,6 +30,9 @@
 		onConfigChange?: (config: ModelConfigValues) => void;
 		configValues?: ModelConfigValues;
 		disabled?: boolean;
+		useRag?: boolean;
+		onUseRagChange?: (value: boolean) => void;
+		hasReadyDocuments?: boolean;
 	}
 
 	let {
@@ -38,7 +45,10 @@
 		onCopy,
 		onConfigChange,
 		configValues,
-		disabled = false
+		disabled = false,
+		useRag = false,
+		onUseRagChange,
+		hasReadyDocuments = false
 	}: Props = $props();
 
 	let copied = $state(false);
@@ -70,6 +80,35 @@
 <header class="flex items-center justify-between border-b px-4 py-2 bg-gray-50 rounded-t-xl">
 	<div class="flex items-center gap-3">
 		<ModelSelector {models} {selectedModel} onSelect={onModelSelect} {disabled} />
+
+		<!-- RAG Toggle -->
+		{#if hasReadyDocuments}
+			<div class="flex items-center gap-2 border-l pl-3">
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<div {...props} class="flex items-center gap-2">
+								<Switch
+									id="rag-toggle"
+									checked={useRag}
+									onCheckedChange={onUseRagChange}
+									disabled={disabled}
+								/>
+								<Label for="rag-toggle" class="flex cursor-pointer items-center gap-1 text-sm">
+									<FileText class="size-3.5" />
+									RAG
+								</Label>
+							</div>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Portal>
+						<Tooltip.Content>
+							Use your documents to enhance responses
+						</Tooltip.Content>
+					</Tooltip.Portal>
+				</Tooltip.Root>
+			</div>
+		{/if}
 	</div>
 
 	<div class="flex items-center gap-2">

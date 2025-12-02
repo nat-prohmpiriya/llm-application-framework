@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { chatApi, type ModelInfo } from '$lib/api/chat';
+	import { chatApi, type ModelInfo, type SourceInfo } from '$lib/api/chat';
+	import { documentsApi } from '$lib/api/documents';
 	import * as ScrollArea from '$lib/components/ui/scroll-area';
 	import ChatHeader from './ChatHeader.svelte';
 	import ChatInput from './ChatInput.svelte';
@@ -13,6 +14,7 @@
 		role: 'user' | 'assistant';
 		content: string;
 		createdAt: Date;
+		sources?: SourceInfo[];
 	}
 
 	interface Props {
@@ -52,6 +54,10 @@
 		presencePenalty: 0
 	});
 
+	// RAG state
+	let useRag = $state(false);
+	let hasReadyDocuments = $state(false);
+
 	// Convert initial messages to local format
 	$effect(() => {
 		if (initialMessages.length > 0) {
@@ -68,10 +74,20 @@
 		}
 	});
 
-	// Load models on mount
+	// Load models and check documents on mount
 	onMount(async () => {
-		await loadModels();
+		await Promise.all([loadModels(), checkReadyDocuments()]);
 	});
+
+	async function checkReadyDocuments() {
+		try {
+			const response = await documentsApi.list(1, 100);
+			hasReadyDocuments = response.items.some((doc) => doc.status === 'ready');
+		} catch (e) {
+			console.error('Failed to check documents:', e);
+			hasReadyDocuments = false;
+		}
+	}
 
 	async function loadModels() {
 		try {
@@ -129,7 +145,9 @@
 					top_p: modelConfig.topP,
 					frequency_penalty: modelConfig.frequencyPenalty,
 					presence_penalty: modelConfig.presencePenalty,
-					stream: true
+					stream: true,
+					use_rag: useRag && hasReadyDocuments,
+					rag_top_k: 5
 				},
 				(content) => {
 					streamingContent += content;
@@ -191,6 +209,10 @@
 		modelConfig = config;
 	}
 
+	function handleUseRagChange(value: boolean) {
+		useRag = value;
+	}
+
 	// Throttled scroll to avoid too many scroll calls during streaming
 	let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
 	function scrollToBottom() {
@@ -215,6 +237,9 @@
 		onConfigChange={handleConfigChange}
 		configValues={modelConfig}
 		disabled={isLoading}
+		{useRag}
+		onUseRagChange={handleUseRagChange}
+		{hasReadyDocuments}
 	/>
 
 	<!-- Messages Area -->
@@ -228,7 +253,7 @@
 			{:else}
 				<!-- Messages -->
 				{#each messages as message (message.id)}
-					<ChatMessage role={message.role} content={message.content} />
+					<ChatMessage role={message.role} content={message.content} sources={message.sources} />
 				{/each}
 
 				<!-- Streaming message -->

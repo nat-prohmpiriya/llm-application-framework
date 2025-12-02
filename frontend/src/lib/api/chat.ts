@@ -33,6 +33,8 @@ export interface ChatRequest {
 	frequency_penalty?: number;
 	presence_penalty?: number;
 	stream?: boolean;
+	use_rag?: boolean;
+	rag_top_k?: number;
 }
 
 export interface ChatMessage {
@@ -47,11 +49,20 @@ export interface UsageInfo {
 	total_tokens: number;
 }
 
+export interface SourceInfo {
+	document_id: string;
+	filename: string;
+	chunk_index: number;
+	score: number;
+	content: string;
+}
+
 export interface ChatResponse {
 	message: ChatMessage;
 	model: string;
 	usage: UsageInfo | null;
 	conversation_id: string | null;
+	sources?: SourceInfo[];
 }
 
 export interface StreamChunk {

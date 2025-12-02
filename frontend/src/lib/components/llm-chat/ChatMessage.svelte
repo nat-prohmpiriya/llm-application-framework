@@ -2,14 +2,17 @@
 	import { User, Bot } from 'lucide-svelte';
 	import { cn } from '$lib/utils';
 	import { marked } from 'marked';
+	import type { SourceInfo } from '$lib/api/chat';
+	import SourceCitation from './SourceCitation.svelte';
 
 	interface Props {
 		role: 'user' | 'assistant';
 		content: string;
 		isStreaming?: boolean;
+		sources?: SourceInfo[];
 	}
 
-	let { role, content, isStreaming = false }: Props = $props();
+	let { role, content, isStreaming = false, sources = [] }: Props = $props();
 
 	let isUser = $derived(role === 'user');
 
@@ -53,6 +56,11 @@
 		{/if}
 		{#if isStreaming && !isUser}
 			<span class="inline-block size-2 animate-pulse rounded-full bg-current ml-1"></span>
+		{/if}
+
+		<!-- Sources -->
+		{#if !isUser && !isStreaming && sources.length > 0}
+			<SourceCitation {sources} />
 		{/if}
 	</div>
 

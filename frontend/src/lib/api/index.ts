@@ -1,3 +1,4 @@
 export { fetchApi, fetchStream, uploadFile, setStoredToken, removeStoredToken } from './client';
 export { authApi } from './auth';
-export { chatApi, type ModelInfo, type ModelsResponse } from './chat';
+export { chatApi, type ModelInfo, type ModelsResponse, type SourceInfo } from './chat';
+export { documentsApi, type Document, type DocumentDetail, type DocumentStatus } from './documents';
