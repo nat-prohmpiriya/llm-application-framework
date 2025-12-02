@@ -1,8 +1,7 @@
-version: "3.9"
-
 services:
   litellm:
-    image: ghcr.io/berriai/litellm:main-stable
+    image: ghcr.io/berriai/litellm-database:main-latest
+    platform: linux/amd64
     container_name: litellm
     restart: unless-stopped
     ports:

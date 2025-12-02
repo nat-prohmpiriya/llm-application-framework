@@ -3,6 +3,24 @@
 
 model_list:
   # ============================================
+  # Groq Models - Fast inference (Active)
+  # ============================================
+  - model_name: llama-3.3-70b
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: llama-3.1-8b
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: mixtral-8x7b
+    litellm_params:
+      model: groq/mixtral-8x7b-32768
+      api_key: os.environ/GROQ_API_KEY
+
+  # ============================================
   # Google Gemini Models (Active)
   # ============================================
   - model_name: gemini-2.0-flash
@@ -55,19 +73,6 @@ model_list:
   #   litellm_params:
   #     model: anthropic/claude-3-opus-20240229
   #     api_key: os.environ/ANTHROPIC_API_KEY
-
-  # ============================================
-  # Groq Models - Fast inference (Uncomment when needed)
-  # ============================================
-  # - model_name: llama-3.3-70b-versatile
-  #   litellm_params:
-  #     model: groq/llama-3.3-70b-versatile
-  #     api_key: os.environ/GROQ_API_KEY
-
-  # - model_name: mixtral-8x7b-32768
-  #   litellm_params:
-  #     model: groq/mixtral-8x7b-32768
-  #     api_key: os.environ/GROQ_API_KEY
 
   # ============================================
   # Mistral Models (Uncomment when needed)

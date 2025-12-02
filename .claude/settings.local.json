@@ -4,7 +4,12 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "Bash(chmod:*)",
-      "Bash(./generate-env.sh)"
+      "Bash(./generate-env.sh)",
+      "Bash(docker compose:*)",
+      "Bash(docker pull:*)",
+      "Bash(docker logout:*)",
+      "Bash(docker search:*)",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []
