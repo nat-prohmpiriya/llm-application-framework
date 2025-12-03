@@ -194,6 +194,16 @@ async def delete_conversation(
     return True
 
 
+def generate_title_from_message(content: str, max_length: int = 50) -> str:
+    """Generate conversation title from first user message."""
+    # Remove extra whitespace and newlines
+    title = " ".join(content.split())
+
+    if len(title) > max_length:
+        return title[:max_length].rstrip() + "..."
+    return title
+
+
 async def add_message(
     db: AsyncSession,
     conversation_id: uuid.UUID,
@@ -214,6 +224,17 @@ async def add_message(
     db.add(message)
     await db.flush()
     await db.refresh(message)
+
+    # Auto-generate title from first user message if not set
+    if message_role == MessageRole.USER:
+        stmt = select(Conversation).where(Conversation.id == conversation_id)
+        result = await db.execute(stmt)
+        conversation = result.scalar_one_or_none()
+
+        if conversation and not conversation.title:
+            conversation.title = generate_title_from_message(content)
+            await db.flush()
+
     return message
 
 
