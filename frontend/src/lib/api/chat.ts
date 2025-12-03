@@ -38,6 +38,7 @@ export interface ChatRequest {
 	rag_document_ids?: string[];
 	project_id?: string;
 	agent_slug?: string;
+	skip_user_save?: boolean;
 }
 
 export interface ChatMessage {

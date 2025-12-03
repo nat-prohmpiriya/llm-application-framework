@@ -167,13 +167,14 @@ async def chat(
             conversation_id=data.conversation_id,
         )
 
-        # Save user message to DB
-        await conversation_service.add_message(
-            db=db,
-            conversation_id=conversation_id,
-            role="user",
-            content=data.message,
-        )
+        # Save user message to DB (skip for regenerate)
+        if not data.skip_user_save:
+            await conversation_service.add_message(
+                db=db,
+                conversation_id=conversation_id,
+                role="user",
+                content=data.message,
+            )
 
         # Build messages list from history
         messages = await build_messages_from_history(
@@ -379,13 +380,14 @@ async def chat_stream(
         conversation_id=data.conversation_id,
     )
 
-    # Save user message to DB
-    await conversation_service.add_message(
-        db=db,
-        conversation_id=conversation_id,
-        role="user",
-        content=data.message,
-    )
+    # Save user message to DB (skip for regenerate)
+    if not data.skip_user_save:
+        await conversation_service.add_message(
+            db=db,
+            conversation_id=conversation_id,
+            role="user",
+            content=data.message,
+        )
 
     # Build messages list from history
     messages = await build_messages_from_history(
@@ -395,8 +397,9 @@ async def chat_stream(
         new_message=data.message,
     )
 
-    # Remove duplicate user message
-    messages = messages[:-1]
+    # Remove duplicate user message (only if we saved it above)
+    if not data.skip_user_save:
+        messages = messages[:-1]
     messages.append(LLMChatMessage(role="user", content=data.message))
 
     # RAG: Retrieve context and build system prompt if enabled

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { User, Bot, Copy, Check } from 'lucide-svelte';
+	import { User, Bot, Copy, Check, RefreshCw } from 'lucide-svelte';
 	import { cn } from '$lib/utils';
 	import { Marked } from 'marked';
 	import { markedHighlight } from 'marked-highlight';
@@ -31,9 +31,11 @@
 		isStreaming?: boolean;
 		sources?: SourceInfo[];
 		createdAt?: Date;
+		isLastAssistant?: boolean;
+		onRegenerate?: () => void;
 	}
 
-	let { role, content, isStreaming = false, sources = [], createdAt }: Props = $props();
+	let { role, content, isStreaming = false, sources = [], createdAt, isLastAssistant = false, onRegenerate }: Props = $props();
 
 	// Format time as HH:MM (24-hour format)
 	let formattedTime = $derived(
@@ -74,23 +76,38 @@
 			isUser ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted rounded-bl-md'
 		)}
 	>
-		<!-- Copy button -->
-		<button
-			onclick={handleCopy}
-			class={cn(
-				'absolute top-1 right-1 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity',
-				isUser
-					? 'hover:bg-primary-foreground/20 text-primary-foreground'
-					: 'hover:bg-background/50 text-muted-foreground'
-			)}
-			title="Copy message"
-		>
-			{#if copied}
-				<Check class="size-3.5" />
-			{:else}
-				<Copy class="size-3.5" />
+		<!-- Action buttons -->
+		<div class={cn(
+			'absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity',
+		)}>
+			<!-- Regenerate button (only for last assistant message) -->
+			{#if isLastAssistant && !isStreaming && onRegenerate}
+				<button
+					onclick={onRegenerate}
+					class="p-1 rounded hover:bg-background/50 text-muted-foreground"
+					title="Regenerate response"
+				>
+					<RefreshCw class="size-3.5" />
+				</button>
 			{/if}
-		</button>
+			<!-- Copy button -->
+			<button
+				onclick={handleCopy}
+				class={cn(
+					'p-1 rounded',
+					isUser
+						? 'hover:bg-primary-foreground/20 text-primary-foreground'
+						: 'hover:bg-background/50 text-muted-foreground'
+				)}
+				title="Copy message"
+			>
+				{#if copied}
+					<Check class="size-3.5" />
+				{:else}
+					<Copy class="size-3.5" />
+				{/if}
+			</button>
+		</div>
 		{#if isUser}
 			<p class="whitespace-pre-wrap break-words overflow-wrap-anywhere">{content}</p>
 		{:else if isStreaming}

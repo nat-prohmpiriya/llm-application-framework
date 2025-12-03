@@ -32,6 +32,10 @@ class ChatRequest(BaseModel):
         default=None,
         description="Optional agent slug to use for processing. If provided, uses AgentEngine with tools."
     )
+    skip_user_save: bool = Field(
+        default=False,
+        description="Skip saving user message to DB (used for regenerate response)"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={

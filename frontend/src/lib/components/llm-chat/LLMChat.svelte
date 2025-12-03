@@ -230,6 +230,94 @@
 			scrollTimeout = null;
 		}, 50);
 	}
+
+	// Regenerate last assistant response
+	async function handleRegenerate() {
+		if (!selectedModel || isLoading || messages.length < 2) return;
+
+		// Find last user message
+		let lastUserMessage: Message | null = null;
+		for (let i = messages.length - 1; i >= 0; i--) {
+			if (messages[i].role === 'user') {
+				lastUserMessage = messages[i];
+				break;
+			}
+		}
+
+		if (!lastUserMessage) return;
+
+		// Remove last assistant message from UI
+		const lastMessage = messages[messages.length - 1];
+		if (lastMessage.role === 'assistant') {
+			messages = messages.slice(0, -1);
+		}
+
+		// Resend with skip_user_save flag
+		isLoading = true;
+		isStreaming = true;
+		streamingContent = '';
+		error = null;
+
+		scrollToBottom();
+
+		try {
+			await chatApi.stream(
+				{
+					message: lastUserMessage.content,
+					model: selectedModel.id,
+					conversation_id: conversationId,
+					temperature: modelConfig.temperature,
+					max_tokens: modelConfig.maxOutputTokens,
+					top_p: modelConfig.topP,
+					frequency_penalty: modelConfig.frequencyPenalty,
+					presence_penalty: modelConfig.presencePenalty,
+					stream: true,
+					use_rag: useRag && hasReadyDocuments,
+					rag_top_k: 5,
+					project_id: projectId,
+					agent_slug: agentStore.currentSelectedSlug || undefined,
+					skip_user_save: true
+				},
+				(content) => {
+					streamingContent += content;
+					scrollToBottom();
+				},
+				(_newConversationId, sources) => {
+					const assistantMessage: Message = {
+						id: crypto.randomUUID(),
+						role: 'assistant',
+						content: streamingContent,
+						createdAt: new Date(),
+						sources: sources
+					};
+					messages = [...messages, assistantMessage];
+					streamingContent = '';
+					isStreaming = false;
+					isLoading = false;
+				},
+				(errorMsg) => {
+					error = errorMsg;
+					isStreaming = false;
+					isLoading = false;
+				}
+			);
+		} catch (e) {
+			console.error('Regenerate error:', e);
+			error = e instanceof Error ? e.message : 'Failed to regenerate response';
+			isStreaming = false;
+			isLoading = false;
+		}
+	}
+
+	// Check if message is the last assistant message
+	function isLastAssistantMessage(index: number): boolean {
+		if (messages[index].role !== 'assistant') return false;
+		// Check if there are any assistant messages after this one
+		for (let i = index + 1; i < messages.length; i++) {
+			if (messages[i].role === 'assistant') return false;
+		}
+		return true;
+	}
 </script>
 
 <div class="flex h-full flex-col bg-background border rounded-xl shadow-md overflow-hidden min-w-0">
@@ -261,8 +349,15 @@
 				</div>
 			{:else}
 				<!-- Messages -->
-				{#each messages as message (message.id)}
-					<ChatMessage role={message.role} content={message.content} sources={message.sources} createdAt={message.createdAt} />
+				{#each messages as message, index (message.id)}
+					<ChatMessage
+						role={message.role}
+						content={message.content}
+						sources={message.sources}
+						createdAt={message.createdAt}
+						isLastAssistant={isLastAssistantMessage(index)}
+						onRegenerate={isLastAssistantMessage(index) ? handleRegenerate : undefined}
+					/>
 				{/each}
 
 				<!-- Streaming message -->
