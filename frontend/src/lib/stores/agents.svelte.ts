@@ -1,4 +1,4 @@
-import { agentsApi, type AgentInfo } from '$lib/api';
+import { agentsApi, type AgentInfo, type AgentCreate, type AgentUpdate } from '$lib/api';
 
 const STORAGE_KEY = 'selected_agent_slug';
 
@@ -43,6 +43,61 @@ class AgentStore {
 		const stored = localStorage.getItem(STORAGE_KEY);
 		if (stored) {
 			this.selectedAgentSlug = stored;
+		}
+	}
+
+	async createAgent(data: AgentCreate): Promise<AgentInfo> {
+		this.isLoading = true;
+		this.error = null;
+
+		try {
+			const agent = await agentsApi.create(data);
+			// Refresh agents list
+			await this.fetchAgents();
+			return agent;
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : 'Failed to create agent';
+			throw e;
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async updateAgent(agentId: string, data: AgentUpdate): Promise<AgentInfo> {
+		this.isLoading = true;
+		this.error = null;
+
+		try {
+			const agent = await agentsApi.update(agentId, data);
+			// Refresh agents list
+			await this.fetchAgents();
+			return agent;
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : 'Failed to update agent';
+			throw e;
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async deleteAgent(agentId: string): Promise<void> {
+		this.isLoading = true;
+		this.error = null;
+
+		try {
+			await agentsApi.delete(agentId);
+			// Clear selection if deleted agent was selected
+			const deletedAgent = this.agents.find(a => a.id === agentId);
+			if (deletedAgent && this.selectedAgentSlug === deletedAgent.slug) {
+				this.selectAgent(null);
+			}
+			// Refresh agents list
+			await this.fetchAgents();
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : 'Failed to delete agent';
+			throw e;
+		} finally {
+			this.isLoading = false;
 		}
 	}
 
