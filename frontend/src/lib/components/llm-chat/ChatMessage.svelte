@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { User, Bot, Copy, Check, RefreshCw } from 'lucide-svelte';
+	import { User, Bot, Copy, Check, RefreshCw, Pencil, X } from 'lucide-svelte';
 	import { cn } from '$lib/utils';
 	import { Marked } from 'marked';
 	import { markedHighlight } from 'marked-highlight';
@@ -32,10 +32,12 @@
 		sources?: SourceInfo[];
 		createdAt?: Date;
 		isLastAssistant?: boolean;
+		isLastUser?: boolean;
 		onRegenerate?: () => void;
+		onEdit?: (newContent: string) => void;
 	}
 
-	let { role, content, isStreaming = false, sources = [], createdAt, isLastAssistant = false, onRegenerate }: Props = $props();
+	let { role, content, isStreaming = false, sources = [], createdAt, isLastAssistant = false, isLastUser = false, onRegenerate, onEdit }: Props = $props();
 
 	// Format time as HH:MM (24-hour format)
 	let formattedTime = $derived(
@@ -52,12 +54,43 @@
 	// Copy button state
 	let copied = $state(false);
 
+	// Edit mode state
+	let isEditing = $state(false);
+	let editContent = $state('');
+
 	async function handleCopy() {
 		await navigator.clipboard.writeText(content);
 		copied = true;
 		setTimeout(() => {
 			copied = false;
 		}, 2000);
+	}
+
+	function startEdit() {
+		editContent = content;
+		isEditing = true;
+	}
+
+	function cancelEdit() {
+		isEditing = false;
+		editContent = '';
+	}
+
+	function submitEdit() {
+		if (editContent.trim() && editContent !== content) {
+			onEdit?.(editContent.trim());
+		}
+		isEditing = false;
+		editContent = '';
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			submitEdit();
+		} else if (e.key === 'Escape') {
+			cancelEdit();
+		}
 	}
 </script>
 
@@ -76,39 +109,77 @@
 			isUser ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted rounded-bl-md'
 		)}
 	>
-		<!-- Action buttons -->
-		<div class={cn(
-			'absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity',
-		)}>
-			<!-- Regenerate button (only for last assistant message) -->
-			{#if isLastAssistant && !isStreaming && onRegenerate}
-				<button
-					onclick={onRegenerate}
-					class="p-1 rounded hover:bg-background/50 text-muted-foreground"
-					title="Regenerate response"
-				>
-					<RefreshCw class="size-3.5" />
-				</button>
-			{/if}
-			<!-- Copy button -->
-			<button
-				onclick={handleCopy}
-				class={cn(
-					'p-1 rounded',
-					isUser
-						? 'hover:bg-primary-foreground/20 text-primary-foreground'
-						: 'hover:bg-background/50 text-muted-foreground'
-				)}
-				title="Copy message"
-			>
-				{#if copied}
-					<Check class="size-3.5" />
-				{:else}
-					<Copy class="size-3.5" />
+		<!-- Action buttons (hidden during edit mode) -->
+		{#if !isEditing}
+			<div class={cn(
+				'absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity',
+			)}>
+				<!-- Edit button (only for last user message) -->
+				{#if isLastUser && isUser && onEdit}
+					<button
+						onclick={startEdit}
+						class="p-1 rounded hover:bg-primary-foreground/20 text-primary-foreground"
+						title="Edit message"
+					>
+						<Pencil class="size-3.5" />
+					</button>
 				{/if}
-			</button>
-		</div>
-		{#if isUser}
+				<!-- Regenerate button (only for last assistant message) -->
+				{#if isLastAssistant && !isStreaming && onRegenerate}
+					<button
+						onclick={onRegenerate}
+						class="p-1 rounded hover:bg-background/50 text-muted-foreground"
+						title="Regenerate response"
+					>
+						<RefreshCw class="size-3.5" />
+					</button>
+				{/if}
+				<!-- Copy button -->
+				<button
+					onclick={handleCopy}
+					class={cn(
+						'p-1 rounded',
+						isUser
+							? 'hover:bg-primary-foreground/20 text-primary-foreground'
+							: 'hover:bg-background/50 text-muted-foreground'
+					)}
+					title="Copy message"
+				>
+					{#if copied}
+						<Check class="size-3.5" />
+					{:else}
+						<Copy class="size-3.5" />
+					{/if}
+				</button>
+			</div>
+		{/if}
+		{#if isUser && isEditing}
+			<!-- Edit mode -->
+			<div class="flex flex-col gap-2">
+				<textarea
+					bind:value={editContent}
+					onkeydown={handleKeydown}
+					class="w-full min-h-[60px] p-2 rounded bg-primary-foreground/10 text-primary-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary-foreground/50"
+					rows="3"
+				></textarea>
+				<div class="flex justify-end gap-1">
+					<button
+						onclick={cancelEdit}
+						class="p-1 rounded hover:bg-primary-foreground/20 text-primary-foreground"
+						title="Cancel"
+					>
+						<X class="size-4" />
+					</button>
+					<button
+						onclick={submitEdit}
+						class="p-1 rounded hover:bg-primary-foreground/20 text-primary-foreground"
+						title="Save & Send"
+					>
+						<Check class="size-4" />
+					</button>
+				</div>
+			</div>
+		{:else if isUser}
 			<p class="whitespace-pre-wrap break-words overflow-wrap-anywhere">{content}</p>
 		{:else if isStreaming}
 			<!-- During streaming: show raw text for performance -->

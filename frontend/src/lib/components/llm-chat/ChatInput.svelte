@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Image, Send } from 'lucide-svelte';
+	import { Image, Send, Square } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 
 	interface Props {
@@ -8,6 +8,7 @@
 		disabled?: boolean;
 		loading?: boolean;
 		onSend: (message: string) => void;
+		onStop?: () => void;
 		onImageUpload?: (files: FileList) => void;
 	}
 
@@ -17,6 +18,7 @@
 		disabled = false,
 		loading = false,
 		onSend,
+		onStop,
 		onImageUpload
 	}: Props = $props();
 
@@ -101,22 +103,28 @@
 			oninput={handleInput}
 		></textarea>
 
-		<!-- Send Button -->
-		<Button
-			variant="ghost"
-			size="icon-sm"
-			onclick={handleSend}
-			disabled={!canSend}
-			title="Send message"
-			class="shrink-0"
-		>
-			{#if loading}
-				<div
-					class="size-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"
-				></div>
-			{:else}
+		<!-- Send/Stop Button -->
+		{#if loading && onStop}
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				onclick={onStop}
+				title="Stop generating"
+				class="shrink-0"
+			>
+				<Square class="size-4 fill-destructive text-destructive" />
+			</Button>
+		{:else}
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				onclick={handleSend}
+				disabled={!canSend}
+				title="Send message"
+				class="shrink-0"
+			>
 				<Send class="size-5 {canSend ? 'text-primary' : 'text-muted-foreground'}" />
-			{/if}
-		</Button>
+			</Button>
+		{/if}
 	</div>
 </div>

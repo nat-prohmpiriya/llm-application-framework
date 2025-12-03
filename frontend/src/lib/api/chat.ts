@@ -104,7 +104,8 @@ export const chatApi = {
 		data: ChatRequest,
 		onChunk: (content: string) => void,
 		onDone: (conversationId?: string, sources?: SourceInfo[]) => void,
-		onError: (error: string) => void
+		onError: (error: string) => void,
+		abortSignal?: AbortSignal
 	): Promise<{ traceId: string | null; conversationId: string | null }> => {
 		const token = localStorage.getItem('access_token');
 
@@ -115,6 +116,7 @@ export const chatApi = {
 				...(token && { Authorization: `Bearer ${token}` }),
 			},
 			body: JSON.stringify({ ...data, stream: true }),
+			signal: abortSignal,
 		});
 
 		if (!response.ok) {

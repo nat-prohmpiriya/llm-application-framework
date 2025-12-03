@@ -63,6 +63,9 @@
 	let useRag = $state(false);
 	let hasReadyDocuments = $state(false);
 
+	// Abort controller for stopping streaming
+	let abortController = $state<AbortController | null>(null);
+
 	// Convert initial messages to local format
 	$effect(() => {
 		if (initialMessages.length > 0) {
@@ -136,6 +139,9 @@
 		streamingContent = '';
 		error = null;
 
+		// Create abort controller for this request
+		abortController = new AbortController();
+
 		// Scroll to bottom
 		scrollToBottom();
 
@@ -173,6 +179,7 @@
 					streamingContent = '';
 					isStreaming = false;
 					isLoading = false;
+					abortController = null;
 
 					// If this was a new conversation, notify parent
 					if (newConversationId && !conversationId) {
@@ -184,13 +191,40 @@
 					error = errorMsg;
 					isStreaming = false;
 					isLoading = false;
-				}
+					abortController = null;
+				},
+				abortController.signal
 			);
 		} catch (e) {
+			// Ignore abort errors
+			if (e instanceof Error && e.name === 'AbortError') {
+				// Save partial response if any
+				if (streamingContent) {
+					const assistantMessage: Message = {
+						id: crypto.randomUUID(),
+						role: 'assistant',
+						content: streamingContent,
+						createdAt: new Date()
+					};
+					messages = [...messages, assistantMessage];
+				}
+				streamingContent = '';
+				isStreaming = false;
+				isLoading = false;
+				abortController = null;
+				return;
+			}
 			console.error('Chat error:', e);
 			error = e instanceof Error ? e.message : 'Failed to send message';
 			isStreaming = false;
 			isLoading = false;
+			abortController = null;
+		}
+	}
+
+	function handleStop() {
+		if (abortController) {
+			abortController.abort();
 		}
 	}
 
@@ -318,6 +352,38 @@
 		}
 		return true;
 	}
+
+	// Check if message is the last user message
+	function isLastUserMessage(index: number): boolean {
+		if (messages[index].role !== 'user') return false;
+		// Check if there are any user messages after this one
+		for (let i = index + 1; i < messages.length; i++) {
+			if (messages[i].role === 'user') return false;
+		}
+		return true;
+	}
+
+	// Edit last user message and resend
+	async function handleEdit(newContent: string) {
+		if (!selectedModel || isLoading || messages.length < 1) return;
+
+		// Find and update last user message
+		let lastUserIndex = -1;
+		for (let i = messages.length - 1; i >= 0; i--) {
+			if (messages[i].role === 'user') {
+				lastUserIndex = i;
+				break;
+			}
+		}
+
+		if (lastUserIndex === -1) return;
+
+		// Remove messages from last user message onwards
+		messages = messages.slice(0, lastUserIndex);
+
+		// Send edited message as new
+		await handleSend(newContent);
+	}
 </script>
 
 <div class="flex h-full flex-col bg-background border rounded-xl shadow-md overflow-hidden min-w-0">
@@ -356,7 +422,9 @@
 						sources={message.sources}
 						createdAt={message.createdAt}
 						isLastAssistant={isLastAssistantMessage(index)}
+						isLastUser={isLastUserMessage(index)}
 						onRegenerate={isLastAssistantMessage(index) ? handleRegenerate : undefined}
+						onEdit={isLastUserMessage(index) ? handleEdit : undefined}
 					/>
 				{/each}
 
@@ -378,5 +446,5 @@
 	</ScrollArea.Root>
 
 	<!-- Input -->
-	<ChatInput bind:value={inputValue} onSend={handleSend} loading={isLoading} disabled={!selectedModel} />
+	<ChatInput bind:value={inputValue} onSend={handleSend} onStop={handleStop} loading={isLoading} disabled={!selectedModel} />
 </div>
