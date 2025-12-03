@@ -1,9 +1,29 @@
 <script lang="ts">
-	import { User, Bot } from 'lucide-svelte';
+	import { User, Bot, Copy, Check } from 'lucide-svelte';
 	import { cn } from '$lib/utils';
-	import { marked } from 'marked';
+	import { Marked } from 'marked';
+	import { markedHighlight } from 'marked-highlight';
+	import hljs from 'highlight.js';
+	import 'highlight.js/styles/github-dark.css';
 	import type { SourceInfo } from '$lib/api/chat';
 	import SourceCitation from './SourceCitation.svelte';
+
+	// Configure marked with highlight.js
+	const markedInstance = new Marked(
+		markedHighlight({
+			emptyLangClass: 'hljs',
+			langPrefix: 'hljs language-',
+			highlight(code, lang) {
+				const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+				return hljs.highlight(code, { language }).value;
+			}
+		})
+	);
+
+	markedInstance.setOptions({
+		breaks: true,
+		gfm: true
+	});
 
 	interface Props {
 		role: 'user' | 'assistant';
@@ -22,16 +42,21 @@
 
 	let isUser = $derived(role === 'user');
 
-	// Configure marked for safe rendering
-	marked.setOptions({
-		breaks: true,
-		gfm: true
-	});
-
 	// Render markdown to HTML (skip during streaming for performance)
 	let renderedContent = $derived(
-		isUser ? content : (isStreaming ? content : marked.parse(content, { async: false }) as string)
+		isUser ? content : (isStreaming ? content : markedInstance.parse(content, { async: false }) as string)
 	);
+
+	// Copy button state
+	let copied = $state(false);
+
+	async function handleCopy() {
+		await navigator.clipboard.writeText(content);
+		copied = true;
+		setTimeout(() => {
+			copied = false;
+		}, 2000);
+	}
 </script>
 
 <div class={cn('flex gap-3 p-4 min-w-0', isUser ? 'justify-end' : 'justify-start')}>
@@ -45,10 +70,27 @@
 
 	<div
 		class={cn(
-			'max-w-[80%] rounded-2xl px-4 py-2 text-sm overflow-hidden min-w-0',
+			'group relative max-w-[80%] rounded-2xl px-4 py-2 text-sm overflow-hidden min-w-0',
 			isUser ? 'bg-primary text-primary-foreground rounded-br-md' : 'bg-muted rounded-bl-md'
 		)}
 	>
+		<!-- Copy button -->
+		<button
+			onclick={handleCopy}
+			class={cn(
+				'absolute top-1 right-1 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity',
+				isUser
+					? 'hover:bg-primary-foreground/20 text-primary-foreground'
+					: 'hover:bg-background/50 text-muted-foreground'
+			)}
+			title="Copy message"
+		>
+			{#if copied}
+				<Check class="size-3.5" />
+			{:else}
+				<Copy class="size-3.5" />
+			{/if}
+		</button>
 		{#if isUser}
 			<p class="whitespace-pre-wrap break-words overflow-wrap-anywhere">{content}</p>
 		{:else if isStreaming}
