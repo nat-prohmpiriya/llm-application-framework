@@ -56,6 +56,10 @@ class Document(Base, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="DocumentChunk.chunk_index",
     )
+    project_documents: Mapped[list["ProjectDocument"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Document(id={self.id}, filename={self.filename}, status={self.status})>"
@@ -64,3 +68,4 @@ class Document(Base, TimestampMixin):
 # Import at the end to avoid circular imports
 from app.models.user import User  # noqa: E402, F401
 from app.models.chunk import DocumentChunk  # noqa: E402, F401
+from app.models.project_document import ProjectDocument  # noqa: E402, F401
