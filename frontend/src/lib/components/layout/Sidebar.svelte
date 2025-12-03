@@ -4,7 +4,7 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { MessageSquare, FileText, Users, Database, Sliders, Settings, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-svelte';
+	import { MessageSquare, FileText, Bot, Database, Sliders, Settings, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-svelte';
 	import ProjectList from '$lib/components/projects/ProjectList.svelte';
 	import type { Project } from '$lib/api';
 
@@ -37,7 +37,7 @@
 	const navItems: NavItem[] = [
 		{ label: 'Chat', href: '/chat', icon: MessageSquare },
 		{ label: 'Documents', href: '/documents', icon: FileText },
-		{ label: 'Agents', href: '/agents', icon: Users },
+		{ label: 'Agents', href: '/agents', icon: Bot },
 		{ label: 'SQL Query', href: '/sql', icon: Database },
 		{ label: 'Fine-tuning', href: '/finetune', icon: Sliders },
 		{ label: 'Settings', href: '/settings', icon: Settings }
