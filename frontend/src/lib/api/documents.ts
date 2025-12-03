@@ -10,11 +10,19 @@ export interface Document {
 	file_size: number;
 	status: DocumentStatus;
 	chunk_count: number;
+	description: string | null;
+	tags: string[] | null;
 	created_at: string;
 }
 
 export interface DocumentDetail extends Document {
 	error_message: string | null;
+}
+
+export interface DocumentUpdate {
+	filename?: string;
+	description?: string | null;
+	tags?: string[] | null;
 }
 
 export const documentsApi = {
@@ -41,6 +49,16 @@ export const documentsApi = {
 	get: async (id: string): Promise<DocumentDetail> => {
 		return fetchApi<DocumentDetail>(`/api/documents/${id}`, {
 			method: 'GET',
+		});
+	},
+
+	/**
+	 * Update document metadata
+	 */
+	update: async (id: string, data: DocumentUpdate): Promise<Document> => {
+		return fetchApi<Document>(`/api/documents/${id}`, {
+			method: 'PATCH',
+			body: JSON.stringify(data),
 		});
 	},
 

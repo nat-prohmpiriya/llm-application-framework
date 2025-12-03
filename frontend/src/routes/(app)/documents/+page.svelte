@@ -1,18 +1,24 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { FileText, Filter } from 'lucide-svelte';
-	import { Button } from '$lib/components/ui/button';
+	import { FileText, Search } from 'lucide-svelte';
+	import { Input } from '$lib/components/ui/input';
 	import * as Select from '$lib/components/ui/select';
 	import { documentsApi, type Document, type DocumentStatus } from '$lib/api/documents';
 	import DocumentUpload from '$lib/components/documents/DocumentUpload.svelte';
-	import DocumentItem from '$lib/components/documents/DocumentItem.svelte';
+	import DocumentCard from '$lib/components/documents/DocumentCard.svelte';
+	import DocumentEditDialog from '$lib/components/documents/DocumentEditDialog.svelte';
 
 	type StatusFilter = 'all' | DocumentStatus;
 
 	let documents = $state<Document[]>([]);
 	let loading = $state(true);
+	let searchQuery = $state('');
 	let statusFilter = $state<StatusFilter>('all');
 	let pollInterval = $state<ReturnType<typeof setInterval> | null>(null);
+
+	// Edit dialog state
+	let editDialogOpen = $state(false);
+	let editingDocument = $state<Document | null>(null);
 
 	const filterOptions: { value: StatusFilter; label: string }[] = [
 		{ value: 'all', label: 'All' },
@@ -22,11 +28,24 @@
 		{ value: 'error', label: 'Error' }
 	];
 
-	let filteredDocuments = $derived(
-		statusFilter === 'all'
-			? documents
-			: documents.filter((doc) => doc.status === statusFilter)
-	);
+	let filteredDocuments = $derived(() => {
+		let result = documents;
+
+		// Filter by search query
+		if (searchQuery.trim()) {
+			const query = searchQuery.toLowerCase();
+			result = result.filter((doc) =>
+				doc.filename.toLowerCase().includes(query)
+			);
+		}
+
+		// Filter by status
+		if (statusFilter !== 'all') {
+			result = result.filter((doc) => doc.status === statusFilter);
+		}
+
+		return result;
+	});
 
 	let hasProcessingDocuments = $derived(
 		documents.some((doc) => doc.status === 'processing' || doc.status === 'pending')
@@ -91,6 +110,17 @@
 			statusFilter = value as StatusFilter;
 		}
 	}
+
+	function handleEdit(document: Document) {
+		editingDocument = document;
+		editDialogOpen = true;
+	}
+
+	function handleUpdate(updated: Document) {
+		documents = documents.map((doc) =>
+			doc.id === updated.id ? updated : doc
+		);
+	}
 </script>
 
 <svelte:head>
@@ -98,73 +128,103 @@
 </svelte:head>
 
 <div class="flex h-full flex-col">
-	<!-- Header -->
-	<div class="border-b bg-background p-4">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<FileText class="size-5" />
-				<h1 class="text-lg font-semibold">Documents</h1>
+	<!-- Content -->
+	<div class="flex-1 overflow-auto p-8">
+		<div class="mx-auto max-w-6xl">
+			<!-- Header -->
+			<div class="flex items-center justify-between mb-6">
+				<div class="flex items-center gap-3">
+					<FileText class="size-8 text-foreground" />
+					<h1 class="text-3xl font-semibold text-foreground">Documents</h1>
+				</div>
 				{#if documents.length > 0}
-					<span class="text-sm text-muted-foreground">({documents.length})</span>
+					<span class="text-sm text-muted-foreground">{documents.length} documents</span>
 				{/if}
 			</div>
 
-			<!-- Status Filter -->
-			<Select.Root type="single" onValueChange={handleFilterChange}>
-				<Select.Trigger class="w-40">
-					<Filter class="mr-2 size-4" />
-					<span
-						>{filterOptions.find((o) => o.value === statusFilter)?.label || 'All'}</span
-					>
-				</Select.Trigger>
-				<Select.Content>
-					{#each filterOptions as option}
-						<Select.Item value={option.value}>{option.label}</Select.Item>
-					{/each}
-				</Select.Content>
-			</Select.Root>
-		</div>
-	</div>
+			<!-- Search -->
+			<div class="relative mb-6">
+				<Search
+					class="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+				/>
+				<Input
+					type="search"
+					placeholder="Search documents..."
+					class="pl-12 h-12 bg-white border-border rounded-lg text-base"
+					bind:value={searchQuery}
+				/>
+			</div>
 
-	<!-- Content -->
-	<div class="flex-1 overflow-auto p-4">
-		<div class="mx-auto max-w-3xl space-y-6">
-			<!-- Upload Zone -->
-			<DocumentUpload onUpload={handleUpload} />
+			<!-- Filter -->
+			<div class="flex justify-end mb-4">
+				<div class="flex items-center gap-2 text-sm text-muted-foreground">
+					<span>Filter by</span>
+					<Select.Root type="single" onValueChange={handleFilterChange}>
+						<Select.Trigger class="w-32 h-8">
+							<span>{filterOptions.find((o) => o.value === statusFilter)?.label || 'All'}</span>
+						</Select.Trigger>
+						<Select.Content align="end">
+							{#each filterOptions as option}
+								<Select.Item value={option.value}>{option.label}</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</div>
+			</div>
 
-			<!-- Document List -->
 			{#if loading}
 				<div class="flex items-center justify-center py-12">
 					<div
 						class="size-8 animate-spin rounded-full border-4 border-muted border-t-primary"
 					></div>
 				</div>
-			{:else if filteredDocuments.length === 0}
-				<div class="rounded-lg border border-dashed flex flex-col items-center p-12">
-					<FileText class="size-12 text-muted-foreground/50" />
-					<h3 class="mt-4 text-lg font-medium">No documents</h3>
-					<p class="mt-1 text-sm text-muted-foreground">
-						{#if statusFilter !== 'all'}
-							No documents with status "{statusFilter}". Try changing the filter.
-						{:else}
-							Upload your first document to get started with RAG.
-						{/if}
-					</p>
-				</div>
 			{:else}
-				<div class="space-y-2">
-					{#each filteredDocuments as document (document.id)}
-						<DocumentItem {document} onDelete={handleDelete} />
+				<!-- Document Grid -->
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+					<!-- Upload Card (first item) -->
+					<DocumentUpload onUpload={handleUpload} />
+
+					<!-- Document Cards -->
+					{#each filteredDocuments() as document (document.id)}
+						<DocumentCard {document} onDelete={handleDelete} onEdit={handleEdit} />
 					{/each}
 				</div>
-			{/if}
 
-			<!-- Processing indicator -->
-			{#if hasProcessingDocuments}
-				<p class="text-center text-xs text-muted-foreground">
-					Auto-refreshing while documents are processing...
-				</p>
+				<!-- Empty state (when no documents match filter/search) -->
+				{#if filteredDocuments().length === 0 && (searchQuery || statusFilter !== 'all')}
+					<div class="mt-8 rounded-lg bg-white border border-border flex flex-col items-center p-12">
+						<FileText class="size-12 text-muted-foreground/50" />
+						<h3 class="mt-4 text-lg font-medium">No documents found</h3>
+						<p class="mt-1 text-sm text-muted-foreground">
+							{#if searchQuery}
+								No documents matching "{searchQuery}".
+							{:else}
+								No documents with status "{statusFilter}".
+							{/if}
+						</p>
+					</div>
+				{/if}
+
+				<!-- Processing indicator -->
+				{#if hasProcessingDocuments}
+					<p class="mt-4 text-center text-xs text-muted-foreground">
+						Auto-refreshing while documents are processing...
+					</p>
+				{/if}
 			{/if}
 		</div>
 	</div>
 </div>
+
+<!-- Edit Document Dialog -->
+{#if editingDocument}
+	<DocumentEditDialog
+		document={editingDocument}
+		open={editDialogOpen}
+		onOpenChange={(open) => {
+			editDialogOpen = open;
+			if (!open) editingDocument = null;
+		}}
+		onUpdate={handleUpdate}
+	/>
+{/if}

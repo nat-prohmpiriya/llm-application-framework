@@ -15,6 +15,7 @@ from app.schemas.document import (
     DocumentDetailResponse,
     DocumentListResponse,
     DocumentResponse,
+    DocumentUpdate,
 )
 from app.services import document as document_service
 from app.services.storage import get_storage_service
@@ -179,10 +180,42 @@ async def get_document(
             status=status_value,
             chunk_count=document.chunk_count,
             error_message=document.error_message,
+            description=document.description,
+            tags=document.tags,
             created_at=document.created_at,
             updated_at=document.updated_at,
             chunks=chunks_summary,
         ),
+    )
+
+
+@router.patch("/{document_id}")
+async def update_document(
+    document_id: uuid.UUID,
+    data: DocumentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> BaseResponse[DocumentResponse]:
+    """
+    Update document metadata.
+
+    Updatable fields: filename, description, tags
+    """
+    ctx = get_context()
+
+    document = await document_service.update_document(
+        db=db,
+        document_id=document_id,
+        user_id=current_user.id,
+        data=data,
+    )
+
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return BaseResponse(
+        trace_id=ctx.trace_id,
+        data=DocumentResponse.model_validate(document),
     )
 
 

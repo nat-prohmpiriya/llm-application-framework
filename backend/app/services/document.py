@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.core.telemetry import traced
 from app.models.chunk import DocumentChunk
 from app.models.document import Document, DocumentStatus
+from app.schemas.document import DocumentUpdate
 from app.schemas.vector import ChunkCreate
 from app.services.document_processor import DocumentProcessor
 from app.services.embedding import get_embedding_service
@@ -126,6 +127,39 @@ async def get_document(
     )
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
+
+
+@traced()
+async def update_document(
+    db: AsyncSession,
+    document_id: uuid.UUID,
+    user_id: uuid.UUID,
+    data: DocumentUpdate,
+) -> Document | None:
+    """
+    Update document metadata.
+
+    Args:
+        db: Database session
+        document_id: Document ID
+        user_id: User ID for ownership check
+        data: Update data
+
+    Returns:
+        Updated Document if found and owned by user, None otherwise
+    """
+    document = await get_document(db, document_id, user_id)
+    if not document:
+        return None
+
+    # Update only provided fields
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(document, field, value)
+
+    await db.flush()
+    logger.info(f"Updated document {document_id}")
+    return document
 
 
 @traced()

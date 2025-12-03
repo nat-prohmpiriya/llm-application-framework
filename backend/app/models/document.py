@@ -4,7 +4,7 @@ import uuid
 from enum import Enum
 
 from sqlalchemy import BigInteger, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -48,6 +48,8 @@ class Document(Base, TimestampMixin):
     )
     chunk_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[list[str] | None] = mapped_column(ARRAY(String(50)), nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="documents")

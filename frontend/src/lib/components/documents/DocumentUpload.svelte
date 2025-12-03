@@ -106,75 +106,81 @@
 	}
 </script>
 
-<div class="space-y-3">
-	<!-- Drop Zone -->
-	<button
-		type="button"
-		class="w-full rounded-lg border-2 border-dashed p-6 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-			{isDragging
-			? 'border-primary bg-primary/5'
-			: 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'}
-			{isUploading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}"
-		ondragover={handleDragOver}
-		ondragleave={handleDragLeave}
-		ondrop={handleDrop}
-		onclick={handleClick}
+<!-- Upload Card -->
+<button
+	type="button"
+	class="flex flex-col rounded-lg border-2 border-dashed p-4 text-center transition-colors h-full min-h-[180px] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+		{isDragging
+		? 'border-primary bg-primary/5'
+		: 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'}
+		{isUploading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}"
+	ondragover={handleDragOver}
+	ondragleave={handleDragLeave}
+	ondrop={handleDrop}
+	onclick={handleClick}
+	disabled={isUploading}
+>
+	<input
+		bind:this={fileInputRef}
+		type="file"
+		accept={ALLOWED_EXTENSIONS.join(',')}
+		class="hidden"
+		onchange={handleFileChange}
 		disabled={isUploading}
-	>
-		<input
-			bind:this={fileInputRef}
-			type="file"
-			accept={ALLOWED_EXTENSIONS.join(',')}
-			class="hidden"
-			onchange={handleFileChange}
-			disabled={isUploading}
-		/>
+	/>
 
-		<div class="flex flex-col items-center gap-2">
-			{#if isUploading}
-				<div class="size-10 animate-spin rounded-full border-4 border-muted border-t-primary"></div>
-				<p class="text-sm font-medium">{uploadProgress}%</p>
-			{:else}
-				<Upload class="size-10 text-muted-foreground" />
-				<div>
-					<p class="text-sm font-medium">Drop file here or click to upload</p>
-					<p class="mt-1 text-xs text-muted-foreground">
-						PDF, DOCX, TXT, MD, CSV (max 10MB)
-					</p>
-				</div>
-			{/if}
-		</div>
-	</button>
-
-	<!-- Progress Bar -->
-	{#if isUploading}
-		<div class="h-2 overflow-hidden rounded-full bg-muted">
-			<div
-				class="h-full bg-primary transition-all duration-300"
-				style="width: {uploadProgress}%"
-			></div>
-		</div>
-	{/if}
-
-	<!-- Error Message -->
-	{#if error}
-		<div class="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-			<AlertCircle class="size-4 shrink-0" />
-			<span class="flex-1">{error}</span>
-			<Button variant="ghost" size="sm" onclick={clearMessages} class="h-auto p-1">
-				&times;
+	<div class="flex flex-col items-center justify-center gap-3 flex-1">
+		{#if isUploading}
+			<!-- Uploading State -->
+			<div class="flex size-14 items-center justify-center rounded-lg bg-muted">
+				<div class="size-8 animate-spin rounded-full border-4 border-muted-foreground/30 border-t-primary"></div>
+			</div>
+			<div>
+				<p class="text-sm font-medium">Uploading...</p>
+				<p class="text-xs text-muted-foreground">{uploadProgress}%</p>
+			</div>
+			<!-- Progress Bar -->
+			<div class="w-full h-1.5 overflow-hidden rounded-full bg-muted mt-1">
+				<div
+					class="h-full bg-primary transition-all duration-300"
+					style="width: {uploadProgress}%"
+				></div>
+			</div>
+		{:else if error}
+			<!-- Error State -->
+			<div class="flex size-14 items-center justify-center rounded-lg bg-destructive/10">
+				<AlertCircle class="size-7 text-destructive" />
+			</div>
+			<div>
+				<p class="text-sm font-medium text-destructive">Upload Failed</p>
+				<p class="text-xs text-muted-foreground mt-1 max-w-[150px] truncate" title={error}>{error}</p>
+			</div>
+			<Button variant="ghost" size="sm" onclick={(e) => { e.stopPropagation(); clearMessages(); }} class="text-xs">
+				Try Again
 			</Button>
-		</div>
-	{/if}
-
-	<!-- Success Message -->
-	{#if success}
-		<div class="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-600">
-			<CheckCircle class="size-4 shrink-0" />
-			<span class="flex-1">{success}</span>
-			<Button variant="ghost" size="sm" onclick={clearMessages} class="h-auto p-1">
-				&times;
-			</Button>
-		</div>
-	{/if}
-</div>
+		{:else if success}
+			<!-- Success State -->
+			<div class="flex size-14 items-center justify-center rounded-lg bg-green-500/10">
+				<CheckCircle class="size-7 text-green-600" />
+			</div>
+			<div>
+				<p class="text-sm font-medium text-green-600">Uploaded!</p>
+				<p class="text-xs text-muted-foreground mt-1">Click to upload more</p>
+			</div>
+		{:else}
+			<!-- Default State -->
+			<div class="flex size-14 items-center justify-center rounded-lg bg-muted">
+				<Upload class="size-7 text-muted-foreground" />
+			</div>
+			<div>
+				<p class="text-sm font-medium">Upload Document</p>
+				<p class="text-xs text-muted-foreground mt-1">
+					Drop file or click
+				</p>
+			</div>
+			<p class="text-[10px] text-muted-foreground/70 mt-1">
+				PDF, DOCX, TXT, MD, CSV
+			</p>
+		{/if}
+	</div>
+</button>

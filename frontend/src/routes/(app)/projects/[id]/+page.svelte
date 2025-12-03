@@ -139,10 +139,10 @@
 
 <div class="flex h-full flex-col">
 	<!-- Header -->
-	<div class="border-b bg-background p-4">
+	<div class="bg-background p-4">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<Button variant="ghost" size="icon" onclick={() => goto('/chat')}>
+				<Button variant="ghost" size="icon" onclick={() => history.back()}>
 					<ArrowLeft class="size-4" />
 				</Button>
 
@@ -224,7 +224,9 @@
 	<div class="flex-1 overflow-auto p-4">
 		{#if loading}
 			<div class="flex items-center justify-center py-12">
-				<div class="size-8 animate-spin rounded-full border-4 border-muted border-t-primary"></div>
+				<div
+					class="size-8 animate-spin rounded-full border-4 border-muted border-t-primary"
+				></div>
 			</div>
 		{:else if error}
 			<div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
@@ -251,7 +253,8 @@
 					<Tabs.Content value="documents" class="mt-4">
 						<div class="mb-4 flex items-center justify-between">
 							<p class="text-sm text-muted-foreground">
-								Documents assigned to this project will be used for RAG when chatting.
+								Documents assigned to this project will be used for RAG when
+								chatting.
 							</p>
 							<Button size="sm" onclick={() => (showAssignDialog = true)}>
 								<Plus class="mr-2 size-3.5" />
@@ -333,7 +336,9 @@
 												{conv.title || 'Untitled conversation'}
 											</p>
 											<p class="text-xs text-muted-foreground">
-												{conv.message_count} messages &bull; {formatDate(conv.updated_at)}
+												{conv.message_count} messages &bull; {formatDate(
+													conv.updated_at
+												)}
 											</p>
 										</div>
 									</a>
@@ -348,11 +353,7 @@
 </div>
 
 <!-- Edit Dialog -->
-<ProjectDialog
-	bind:open={showEditDialog}
-	project={project}
-	onSave={handleEditSave}
-/>
+<ProjectDialog bind:open={showEditDialog} {project} onSave={handleEditSave} />
 
 <!-- Assign Documents Dialog -->
 <AssignDocumentsDialog

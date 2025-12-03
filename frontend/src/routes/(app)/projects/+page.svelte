@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Folder, Plus, Search, Trash2, FileText, MessageSquare } from 'lucide-svelte';
+	import { Plus, Search, ChevronDown, FolderKanban } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import { Badge } from '$lib/components/ui/badge';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { projectsApi, type ProjectDetail, type ProjectCreate, type ProjectUpdate } from '$lib/api';
 	import ProjectDialog from '$lib/components/projects/ProjectDialog.svelte';
 
@@ -12,16 +12,30 @@
 	let loading = $state(true);
 	let searchQuery = $state('');
 	let showCreateDialog = $state(false);
+	let sortBy = $state<'activity' | 'name' | 'created'>('activity');
 
-	let filteredProjects = $derived(
-		searchQuery
+	let filteredProjects = $derived.by(() => {
+		let result = searchQuery
 			? projects.filter(
 					(p) =>
 						p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 						(p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 				)
-			: projects
-	);
+			: projects;
+
+		// Sort based on selected option
+		return result.toSorted((a, b) => {
+			switch (sortBy) {
+				case 'name':
+					return a.name.localeCompare(b.name);
+				case 'created':
+					return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+				case 'activity':
+				default:
+					return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+			}
+		});
+	});
 
 	onMount(async () => {
 		await loadProjects();
@@ -73,12 +87,21 @@
 		const now = new Date();
 		const diff = now.getTime() - date.getTime();
 		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+		const months = Math.floor(days / 30);
 
-		if (days === 0) return 'Today';
-		if (days === 1) return 'Yesterday';
-		if (days < 7) return `${days} days ago`;
-		return date.toLocaleDateString();
+		if (days === 0) return 'Updated today';
+		if (days === 1) return 'Updated yesterday';
+		if (days < 7) return `Updated ${days} days ago`;
+		if (months === 1) return 'Updated 1 month ago';
+		if (months < 12) return `Updated ${months} months ago`;
+		return `Updated ${date.toLocaleDateString()}`;
 	}
+
+	const sortLabels = {
+		activity: 'Activity',
+		name: 'Name',
+		created: 'Created'
+	};
 </script>
 
 <svelte:head>
@@ -86,38 +109,62 @@
 </svelte:head>
 
 <div class="flex h-full flex-col">
-	<!-- Header -->
-	<div class="border-b bg-background p-4">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<Folder class="size-5" />
-				<h1 class="text-lg font-semibold">Projects</h1>
-				{#if projects.length > 0}
-					<span class="text-sm text-muted-foreground">({projects.length})</span>
-				{/if}
+	<!-- Content -->
+	<div class="flex-1 overflow-auto p-8">
+		<div class="mx-auto max-w-6xl">
+			<!-- Header -->
+			<div class="flex items-center justify-between mb-6">
+				<div class="flex items-center gap-3">
+					<FolderKanban class="size-8 text-foreground" />
+					<h1 class="text-3xl font-semibold text-foreground">Projects</h1>
+				</div>
+				<Button onclick={() => (showCreateDialog = true)}>
+					<Plus class="mr-2 size-4" />
+					New project
+				</Button>
 			</div>
 
-			<Button size="sm" onclick={() => (showCreateDialog = true)}>
-				<Plus class="mr-2 size-4" />
-				New Project
-			</Button>
-		</div>
+			<!-- Search -->
+			<div class="relative mb-6">
+				<Search
+					class="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+				/>
+				<Input
+					type="search"
+					placeholder="Search projects..."
+					class="pl-12 h-12 bg-white border-border rounded-lg text-base"
+					bind:value={searchQuery}
+				/>
+			</div>
 
-		<!-- Search -->
-		<div class="mt-4 relative">
-			<Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-			<Input
-				type="search"
-				placeholder="Search projects..."
-				class="pl-9"
-				bind:value={searchQuery}
-			/>
-		</div>
-	</div>
+			<!-- Sort -->
+			<div class="flex justify-end mb-4">
+				<div class="flex items-center gap-2 text-sm text-muted-foreground">
+					<span>Sort by</span>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger>
+							{#snippet child({ props })}
+								<Button {...props} variant="ghost" size="sm" class="gap-1 px-2">
+									{sortLabels[sortBy]}
+									<ChevronDown class="size-4" />
+								</Button>
+							{/snippet}
+						</DropdownMenu.Trigger>
+						<DropdownMenu.Content align="end">
+							<DropdownMenu.Item onclick={() => (sortBy = 'activity')}
+								>Activity</DropdownMenu.Item
+							>
+							<DropdownMenu.Item onclick={() => (sortBy = 'name')}
+								>Name</DropdownMenu.Item
+							>
+							<DropdownMenu.Item onclick={() => (sortBy = 'created')}
+								>Created</DropdownMenu.Item
+							>
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
+				</div>
+			</div>
 
-	<!-- Content -->
-	<div class="flex-1 overflow-auto p-4">
-		<div class="mx-auto max-w-3xl space-y-2">
 			{#if loading}
 				<div class="flex items-center justify-center py-12">
 					<div
@@ -125,9 +172,10 @@
 					></div>
 				</div>
 			{:else if filteredProjects.length === 0}
-				<div class="rounded-lg border border-dashed flex flex-col items-center p-12">
-					<Folder class="size-12 text-muted-foreground/50" />
-					<h3 class="mt-4 text-lg font-medium">No projects</h3>
+				<div
+					class="rounded-lg bg-white border border-border flex flex-col items-center p-12"
+				>
+					<h3 class="text-lg font-medium">No projects</h3>
 					<p class="mt-1 text-sm text-muted-foreground">
 						{#if searchQuery}
 							No projects matching "{searchQuery}". Try a different search.
@@ -141,44 +189,31 @@
 					</Button>
 				</div>
 			{:else}
-				{#each filteredProjects as project (project.id)}
-					<button
-						class="w-full flex items-center justify-between rounded-lg border p-4 text-left hover:bg-accent transition-colors group"
-						onclick={() => handleClick(project.id)}
-					>
-						<div class="flex-1 min-w-0">
-							<div class="flex items-center gap-2">
-								<h3 class="font-medium truncate">{project.name}</h3>
+				<!-- Grid of project cards -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					{#each filteredProjects as project (project.id)}
+						<button
+							class="bg-white rounded-xl border border-border p-6 text-left hover:shadow-md transition-shadow flex flex-col min-h-[180px] cursor-pointer"
+							onclick={() => handleClick(project.id)}
+						>
+							<div class="flex items-start gap-2 mb-2">
+								<h3 class="font-semibold text-lg text-foreground">
+									{project.name}
+								</h3>
 							</div>
 							{#if project.description}
-								<p class="text-sm text-muted-foreground truncate mt-1">
+								<p class="text-muted-foreground text-sm flex-1 line-clamp-3">
 									{project.description}
 								</p>
+							{:else}
+								<div class="flex-1"></div>
 							{/if}
-							<div class="flex items-center gap-3 mt-2">
-								<Badge variant="secondary" class="gap-1 text-xs">
-									<FileText class="size-3" />
-									{project.document_count}
-								</Badge>
-								<Badge variant="secondary" class="gap-1 text-xs">
-									<MessageSquare class="size-3" />
-									{project.conversation_count}
-								</Badge>
-								<span class="text-xs text-muted-foreground">
-									{formatDate(project.updated_at)}
-								</span>
-							</div>
-						</div>
-						<Button
-							variant="ghost"
-							size="icon"
-							class="opacity-0 group-hover:opacity-100 transition-opacity"
-							onclick={(e) => handleDelete(project.id, e)}
-						>
-							<Trash2 class="size-4 text-destructive" />
-						</Button>
-					</button>
-				{/each}
+							<p class="text-sm text-muted-foreground mt-4">
+								{formatDate(project.updated_at)}
+							</p>
+						</button>
+					{/each}
+				</div>
 			{/if}
 		</div>
 	</div>

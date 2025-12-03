@@ -8,8 +8,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { MessageSquare, MessageSquarePlus, FileText, Bot, ChevronLeft, ChevronRight, LogOut, User, Settings, Image, Folder, Trash2, Loader2 } from 'lucide-svelte';
-	import { chatStore } from '$lib/stores';
-	import type { Conversation } from '$lib/api';
+	import { chatStore, type Conversation } from '$lib/stores';
 
 	let {
 		collapsed = false,
@@ -36,10 +35,9 @@
 		{ label: 'Documents', href: '/documents', icon: FileText },
 		{ label: 'Projects', href: '/projects', icon: Folder },
 		{ label: 'Agents', href: '/agents', icon: Bot },
-		{ label: 'Profile', href: '/profile', icon: User }
 	];
 
-	let chatHistoryContainer: HTMLDivElement;
+	let chatHistoryContainer = $state<HTMLDivElement | null>(null);
 	let hoveredChatId = $state<string | null>(null);
 
 	// Load initial chats

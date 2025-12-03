@@ -3,7 +3,15 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class DocumentUpdate(BaseModel):
+    """Schema for updating document metadata."""
+
+    filename: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=1000)
+    tags: list[str] | None = Field(None, max_length=10)
 
 
 class DocumentResponse(BaseModel):
@@ -16,6 +24,8 @@ class DocumentResponse(BaseModel):
     status: str
     chunk_count: int
     error_message: str | None
+    description: str | None
+    tags: list[str] | None
     created_at: datetime
     updated_at: datetime
 
@@ -53,6 +63,8 @@ class DocumentDetailResponse(BaseModel):
     status: str
     chunk_count: int
     error_message: str | None
+    description: str | None
+    tags: list[str] | None
     created_at: datetime
     updated_at: datetime
     chunks: list[ChunkSummary]
