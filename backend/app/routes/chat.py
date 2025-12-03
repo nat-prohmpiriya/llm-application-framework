@@ -17,6 +17,7 @@ from app.providers.llm import ChatMessage as LLMChatMessage
 from app.providers.llm import llm_client
 from app.schemas.base import BaseResponse
 from app.schemas.chat import AgentChatResponse, ChatMessage, ChatRequest, ChatResponse, SourceInfo, UsageInfo
+from app.services import agent as agent_service
 from app.services import conversation as conversation_service
 from app.services import rag as rag_service
 from app.services.models import fetch_models_from_litellm
@@ -188,10 +189,28 @@ async def chat(
 
         # If agent_slug is provided, use AgentEngine
         if data.agent_slug:
-            try:
-                engine = AgentEngine(data.agent_slug)
-            except ValueError as e:
-                raise HTTPException(status_code=404, detail=str(e))
+            # Try to find user agent in DB first
+            user_agent = await agent_service.get_agent_by_slug(
+                db=db,
+                slug=data.agent_slug,
+                user_id=current_user.id,
+            )
+
+            if user_agent:
+                # User agent from DB - pass config to engine
+                engine = AgentEngine(
+                    agent_slug=data.agent_slug,
+                    document_ids=user_agent.document_ids,
+                    system_prompt=user_agent.system_prompt,
+                    tools_list=user_agent.tools,
+                    config=user_agent.config,
+                )
+            else:
+                # System agent from YAML
+                try:
+                    engine = AgentEngine(data.agent_slug)
+                except ValueError as e:
+                    raise HTTPException(status_code=404, detail=str(e))
 
             # Process with agent
             agent_response = await engine.process(

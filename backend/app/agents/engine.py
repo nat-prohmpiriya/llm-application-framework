@@ -57,17 +57,49 @@ class AgentResponse:
 class AgentEngine:
     """Engine for processing chat messages with agent capabilities."""
 
-    def __init__(self, agent_slug: str) -> None:
+    def __init__(
+        self,
+        agent_slug: str,
+        document_ids: list[uuid.UUID] | None = None,
+        system_prompt: str | None = None,
+        tools_list: list[str] | None = None,
+        config: dict[str, Any] | None = None,
+    ) -> None:
         """Initialize agent engine.
 
         Args:
             agent_slug: Agent identifier to load configuration
+            document_ids: Optional list of document IDs to scope RAG searches
+            system_prompt: Optional system prompt override (for user agents)
+            tools_list: Optional tools list override (for user agents)
+            config: Optional config override (for user agents)
         """
         self.agent_slug = agent_slug
+        self.document_ids = document_ids or []
+
+        # Try to load from YAML first (system agents)
         self.config = agent_loader.load_agent(agent_slug)
 
-        if not self.config:
+        # If not found in YAML, use provided config (user agents)
+        if not self.config and (system_prompt or tools_list):
+            self.config = {
+                "agent": {"slug": agent_slug},
+                "persona": {"system_prompt": system_prompt or "You are a helpful assistant."},
+                "tools": tools_list or [],
+                "settings": config or {},
+            }
+        elif not self.config:
             raise ValueError(f"Agent not found: {agent_slug}")
+
+        # Override system prompt if provided
+        if system_prompt:
+            if "persona" not in self.config:
+                self.config["persona"] = {}
+            self.config["persona"]["system_prompt"] = system_prompt
+
+        # Override tools if provided
+        if tools_list is not None:
+            self.config["tools"] = tools_list
 
         # Load tools for this agent
         self.tools: dict[str, BaseTool] = {}
@@ -78,8 +110,10 @@ class AgentEngine:
             else:
                 logger.warning(f"Unknown tool '{tool_name}' for agent '{agent_slug}'")
 
-        # Get settings
+        # Get settings (merge with provided config)
         self.settings = self.config.get("settings", {})
+        if config:
+            self.settings.update(config)
         self.temperature = self.settings.get("temperature", 0.7)
         self.max_tokens = self.settings.get("max_tokens", 4096)
 
@@ -179,6 +213,11 @@ If a tool returns an error, acknowledge it and try to help without that tool."""
                 params["db"] = db
             if user_id is not None:
                 params["user_id"] = user_id
+
+            # Pass document_ids for RAG scoping if agent has linked documents
+            if tool_call.name == "rag_search" and self.document_ids:
+                params["document_ids"] = self.document_ids
+
             params.update(kwargs)
 
             result = await tool.execute(**params)
