@@ -35,6 +35,8 @@ export interface ChatRequest {
 	stream?: boolean;
 	use_rag?: boolean;
 	rag_top_k?: number;
+	rag_document_ids?: string[];
+	project_id?: string;
 }
 
 export interface ChatMessage {

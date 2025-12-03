@@ -6,7 +6,8 @@
 		Plus,
 		MoreHorizontal,
 		Check,
-		FileText
+		FileText,
+		FolderOpen
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -33,6 +34,7 @@
 		useRag?: boolean;
 		onUseRagChange?: (value: boolean) => void;
 		hasReadyDocuments?: boolean;
+		projectName?: string;
 	}
 
 	let {
@@ -48,7 +50,8 @@
 		disabled = false,
 		useRag = false,
 		onUseRagChange,
-		hasReadyDocuments = false
+		hasReadyDocuments = false,
+		projectName
 	}: Props = $props();
 
 	let copied = $state(false);
@@ -80,6 +83,14 @@
 <header class="flex items-center justify-between border-b px-4 py-2 bg-gray-50 rounded-t-xl">
 	<div class="flex items-center gap-3">
 		<ModelSelector {models} {selectedModel} onSelect={onModelSelect} {disabled} />
+
+		<!-- Project Context Badge -->
+		{#if projectName}
+			<Badge variant="secondary" class="gap-1.5">
+				<FolderOpen class="size-3" />
+				{projectName}
+			</Badge>
+		{/if}
 
 		<!-- RAG Toggle -->
 		{#if hasReadyDocuments}

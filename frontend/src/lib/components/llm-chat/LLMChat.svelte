@@ -21,6 +21,8 @@
 		conversationId?: string;
 		initialMessages?: ApiMessage[];
 		initialModel?: string;
+		projectId?: string;
+		projectName?: string;
 		onConversationCreated?: (id: string) => void;
 		onNewChat?: () => void;
 	}
@@ -29,6 +31,8 @@
 		conversationId = $bindable(),
 		initialMessages = [],
 		initialModel,
+		projectId,
+		projectName,
 		onConversationCreated,
 		onNewChat
 	}: Props = $props();
@@ -147,7 +151,8 @@
 					presence_penalty: modelConfig.presencePenalty,
 					stream: true,
 					use_rag: useRag && hasReadyDocuments,
-					rag_top_k: 5
+					rag_top_k: 5,
+					project_id: projectId
 				},
 				(content) => {
 					streamingContent += content;
@@ -241,6 +246,7 @@
 		{useRag}
 		onUseRagChange={handleUseRagChange}
 		{hasReadyDocuments}
+		{projectName}
 	/>
 
 	<!-- Messages Area -->
