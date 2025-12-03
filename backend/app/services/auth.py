@@ -117,3 +117,27 @@ async def update_user_profile(
     await db.commit()
     await db.refresh(user)
     return user
+
+
+async def change_password(
+    db: AsyncSession, user: User, current_password: str, new_password: str
+) -> User:
+    """Change user password after verifying current password."""
+    if not verify_password(current_password, user.hashed_password):
+        raise InvalidCredentialsError("Current password is incorrect")
+
+    user.hashed_password = hash_password(new_password)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def delete_account(db: AsyncSession, user: User, password: str) -> User:
+    """Soft delete user account after verifying password."""
+    if not verify_password(password, user.hashed_password):
+        raise InvalidCredentialsError("Password is incorrect")
+
+    user.is_active = False
+    await db.commit()
+    await db.refresh(user)
+    return user
