@@ -113,12 +113,12 @@
 - [x] Add markdown rendering for assistant messages
 
 ### 1.8 Chat Enhancements (Backlog)
-- [ ] Auto-generate conversation title from first message
-- [ ] Add code syntax highlighting (Prism.js/Shiki)
+- [x] Auto-generate conversation title from first message
+- [x] Add code syntax highlighting (Prism.js/Shiki)
 - [ ] Add system prompt per conversation (instruction/personality)
-- [ ] Show message timestamps in UI
-- [ ] Add message copy button
-- [ ] Add regenerate response button
+- [x] Show message timestamps in UI
+- [x] Add message copy button
+- [x] Add regenerate response button
 
 **Phase 1 Deliverable**: User can register, login, and chat with AI
 

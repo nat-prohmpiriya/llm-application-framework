@@ -80,7 +80,7 @@ Files:
 
 ---
 
-## Task 5: Regenerate Response Button
+## [x] Task 5: Regenerate Response Button
 
 **Prompt:**
 ```

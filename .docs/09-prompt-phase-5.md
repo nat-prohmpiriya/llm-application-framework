@@ -21,7 +21,7 @@ User Query ──▶ Schema Linking ──▶ SQL Generation ──▶ User Conf
 
 ## Backend Tasks
 
-### Task B1: Database Connection Model
+### [] Task B1: Database Connection Model
 
 **Files**: `backend/app/models/db_connection.py` (NEW)
 
@@ -47,7 +47,7 @@ print('DatabaseConnection model OK')
 
 ---
 
-### Task B2: Database Connection Service
+### [] Task B2: Database Connection Service
 
 **Files**: `backend/app/services/db_connection.py` (NEW)
 
@@ -74,7 +74,7 @@ print('DB Connection service OK')
 
 ---
 
-### Task B3: Schema Extractor
+### [] Task B3: Schema Extractor
 
 **Files**: `backend/app/text2sql/schema_extractor.py` (NEW)
 
@@ -117,7 +117,7 @@ print('Schema extractor OK')
 
 ---
 
-### Task B4: Schema Embedding Service
+### [] Task B4: Schema Embedding Service
 
 **Files**: `backend/app/text2sql/schema_embedder.py` (NEW)
 
@@ -143,7 +143,7 @@ print('Schema embedder OK')
 
 ---
 
-### Task B5: SQL Generator
+### [] Task B5: SQL Generator
 
 **Files**: `backend/app/text2sql/sql_generator.py` (NEW)
 
@@ -184,7 +184,7 @@ print('SQL generator OK')
 
 ---
 
-### Task B6: SQL Validator
+### [] Task B6: SQL Validator
 
 **Files**: `backend/app/text2sql/sql_validator.py` (NEW)
 
@@ -211,7 +211,7 @@ print(validator.validate('DROP TABLE users'))
 
 ---
 
-### Task B7: Safe SQL Executor
+### [] Task B7: Safe SQL Executor
 
 **Files**: `backend/app/text2sql/executor.py` (NEW)
 
@@ -238,7 +238,7 @@ print('SQL executor OK')
 
 ---
 
-### Task B8: Text-to-SQL Routes
+### [] Task B8: Text-to-SQL Routes
 
 **Files**: `backend/app/routes/text2sql.py` (NEW)
 
@@ -286,7 +286,7 @@ curl -s -X POST http://localhost:8000/api/projects/PROJECT_ID/databases/DB_ID/ge
 
 ## Frontend Tasks
 
-### Task F1: Database Connection API
+### [] Task F1: Database Connection API
 
 **Files**: `frontend/src/lib/api/databases.ts` (NEW)
 
@@ -305,7 +305,7 @@ curl -s -X POST http://localhost:8000/api/projects/PROJECT_ID/databases/DB_ID/ge
 
 ---
 
-### Task F2: Database Connection Manager
+### [] Task F2: Database Connection Manager
 
 **Files**: `frontend/src/lib/components/databases/ConnectionManager.svelte` (NEW)
 
@@ -323,7 +323,7 @@ curl -s -X POST http://localhost:8000/api/projects/PROJECT_ID/databases/DB_ID/ge
 
 ---
 
-### Task F3: SQL Confirm Component
+### [] Task F3: SQL Confirm Component
 
 **Files**: `frontend/src/lib/components/text2sql/SQLConfirm.svelte` (NEW)
 
@@ -341,7 +341,7 @@ curl -s -X POST http://localhost:8000/api/projects/PROJECT_ID/databases/DB_ID/ge
 
 ---
 
-### Task F4: SQL Result Viewer
+### [] Task F4: SQL Result Viewer
 
 **Files**: `frontend/src/lib/components/text2sql/SQLResult.svelte` (NEW)
 
@@ -359,7 +359,7 @@ curl -s -X POST http://localhost:8000/api/projects/PROJECT_ID/databases/DB_ID/ge
 
 ---
 
-### Task F5: Text-to-SQL Chat Integration
+### [] Task F5: Text-to-SQL Chat Integration
 
 **Files**: Update `frontend/src/lib/components/llm-chat/LLMChat.svelte`
 
@@ -376,7 +376,7 @@ curl -s -X POST http://localhost:8000/api/projects/PROJECT_ID/databases/DB_ID/ge
 
 ---
 
-### Task F6: Database Settings Page
+### [] Task F6: Database Settings Page
 
 **Files**: `frontend/src/routes/(app)/projects/[id]/databases/+page.svelte` (NEW)
 

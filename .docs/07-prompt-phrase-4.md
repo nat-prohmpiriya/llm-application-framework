@@ -571,7 +571,7 @@ curl -s -X POST http://localhost:8000/api/chat \
 
 ---
 
-### Task F12: Document Selector Component
+### [x] Task F12: Document Selector Component
 
 **Files**: `frontend/src/lib/components/agents/DocumentSelector.svelte`
 
