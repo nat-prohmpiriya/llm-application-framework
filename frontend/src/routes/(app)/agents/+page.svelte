@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Bot, Plus } from 'lucide-svelte';
+	import { Bot, Plus, Search } from 'lucide-svelte';
 	import { agentStore } from '$lib/stores/agents.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import AgentCard from '$lib/components/agents/AgentCard.svelte';
 	import AgentFormDialog from '$lib/components/agents/AgentFormDialog.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
@@ -19,12 +20,25 @@
 	let agentToDelete = $state<AgentInfo | null>(null);
 	let deleting = $state(false);
 
-	// Derived: separate system and user agents
+	// Search
+	let searchQuery = $state('');
+
+	// Derived: filter and separate system and user agents
+	let filteredAgents = $derived.by(() => {
+		if (!searchQuery.trim()) return agentStore.currentAgents;
+		const query = searchQuery.toLowerCase();
+		return agentStore.currentAgents.filter(
+			(a) =>
+				a.name.toLowerCase().includes(query) ||
+				(a.description?.toLowerCase().includes(query) ?? false)
+		);
+	});
+
 	let systemAgents = $derived(
-		agentStore.currentAgents.filter(a => a.source === 'system')
+		filteredAgents.filter(a => a.source === 'system')
 	);
 	let userAgents = $derived(
-		agentStore.currentAgents.filter(a => a.source === 'user')
+		filteredAgents.filter(a => a.source === 'user')
 	);
 
 	onMount(() => {
@@ -83,29 +97,35 @@
 </svelte:head>
 
 <div class="flex h-full flex-col">
-	<!-- Header -->
-	<div class="border-b bg-background p-4">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<Bot class="size-5" />
-				<h1 class="text-lg font-semibold">Agents</h1>
-				{#if agentStore.currentAgents.length > 0}
-					<span class="text-sm text-muted-foreground">({agentStore.currentAgents.length})</span>
-				{/if}
-			</div>
-			<Button onclick={openCreateDialog}>
-				<Plus class="size-4 mr-2" />
-				New Agent
-			</Button>
-		</div>
-		<p class="mt-1 text-sm text-muted-foreground">
-			Select an agent to start a specialized conversation
-		</p>
-	</div>
-
 	<!-- Content -->
-	<div class="flex-1 overflow-auto p-4">
-		<div class="mx-auto max-w-4xl space-y-8">
+	<div class="flex-1 overflow-auto p-8">
+		<div class="mx-auto max-w-6xl">
+			<!-- Header -->
+			<div class="flex items-center justify-between mb-6">
+				<div class="flex items-center gap-3">
+					<Bot class="size-8 text-foreground" />
+					<h1 class="text-3xl font-semibold text-foreground">Agents</h1>
+				</div>
+				<Button onclick={openCreateDialog}>
+					<Plus class="mr-2 size-4" />
+					New Agent
+				</Button>
+			</div>
+
+			<!-- Search -->
+			<div class="relative mb-6">
+				<Search
+					class="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+				/>
+				<Input
+					type="search"
+					placeholder="Search agents..."
+					class="pl-12 h-12 bg-white border-border rounded-lg text-base"
+					bind:value={searchQuery}
+				/>
+			</div>
+
+			<div class="space-y-8">
 			{#if agentStore.loading}
 				<div class="flex items-center justify-center py-12">
 					<div
@@ -116,17 +136,29 @@
 				<div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
 					<p class="text-destructive">{agentStore.currentError}</p>
 				</div>
-			{:else if agentStore.currentAgents.length === 0}
-				<div class="rounded-lg border border-dashed flex flex-col items-center p-12">
+			{:else if filteredAgents.length === 0}
+				<div class="rounded-lg bg-white border border-border flex flex-col items-center p-12">
 					<Bot class="size-12 text-muted-foreground/50" />
-					<h3 class="mt-4 text-lg font-medium">No agents available</h3>
+					<h3 class="mt-4 text-lg font-medium">
+						{#if searchQuery}
+							No agents found
+						{:else}
+							No agents available
+						{/if}
+					</h3>
 					<p class="mt-1 text-sm text-muted-foreground">
-						Create your first agent to get started.
+						{#if searchQuery}
+							No agents matching "{searchQuery}". Try a different search.
+						{:else}
+							Create your first agent to get started.
+						{/if}
 					</p>
-					<Button class="mt-4" onclick={openCreateDialog}>
-						<Plus class="size-4 mr-2" />
-						Create Agent
-					</Button>
+					{#if !searchQuery}
+						<Button class="mt-4" onclick={openCreateDialog}>
+							<Plus class="mr-2 size-4" />
+							Create Agent
+						</Button>
+					{/if}
 				</div>
 			{:else}
 				<!-- My Agents Section -->
@@ -163,6 +195,7 @@
 					</section>
 				{/if}
 			{/if}
+			</div>
 		</div>
 	</div>
 </div>

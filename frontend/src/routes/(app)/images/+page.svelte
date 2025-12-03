@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Image, Upload } from 'lucide-svelte';
+	import { Image } from 'lucide-svelte';
 
 	let images = $state<any[]>([]);
 	let loading = $state(false);
@@ -10,22 +10,20 @@
 </svelte:head>
 
 <div class="flex h-full flex-col">
-	<!-- Header -->
-	<div class="bg-background p-4">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<Image class="size-5" />
-				<h1 class="text-lg font-semibold">Images</h1>
+	<!-- Content -->
+	<div class="flex-1 overflow-auto p-8">
+		<div class="mx-auto max-w-6xl">
+			<!-- Header -->
+			<div class="flex items-center justify-between mb-6">
+				<div class="flex items-center gap-3">
+					<Image class="size-8 text-foreground" />
+					<h1 class="text-3xl font-semibold text-foreground">Images</h1>
+				</div>
 				{#if images.length > 0}
-					<span class="text-sm text-muted-foreground">({images.length})</span>
+					<span class="text-sm text-muted-foreground">{images.length} images</span>
 				{/if}
 			</div>
-		</div>
-	</div>
 
-	<!-- Content -->
-	<div class="flex-1 overflow-auto p-4">
-		<div class="mx-auto max-w-3xl space-y-6">
 			{#if loading}
 				<div class="flex items-center justify-center py-12">
 					<div
@@ -33,7 +31,7 @@
 					></div>
 				</div>
 			{:else if images.length === 0}
-				<div class="rounded-lg border border-dashed flex flex-col items-center p-12">
+				<div class="rounded-lg bg-white border border-border flex flex-col items-center p-12">
 					<Image class="size-12 text-muted-foreground/50" />
 					<h3 class="mt-4 text-lg font-medium">No images yet</h3>
 					<p class="mt-1 text-sm text-muted-foreground text-center">
@@ -41,7 +39,7 @@
 					</p>
 				</div>
 			{:else}
-				<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 					{#each images as image (image.id)}
 						<div class="aspect-square rounded-lg border overflow-hidden">
 							<img

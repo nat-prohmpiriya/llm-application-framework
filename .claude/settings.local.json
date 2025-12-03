@@ -1,15 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZDg3MmU3MC05NDBjLTQ3MTMtYWYxMi01Nzk3YjViYTJlOWUiLCJleHAiOjE3NjQ3NTMyNDMsInR5cGUiOiJhY2Nlc3MifQ.LWyGrWbfxapQwJUCp9xDFKvzGKe3v_5s6K8p3aaEa6w\" echo \"=== Test 1: Create user agent with document_ids ===\" curl -s -X POST \"http://localhost:8000/api/agents\" -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" -d '{\"\"\"\"name\"\"\"\": \"\"\"\"My Research Agent\"\"\"\", \"\"\"\"slug\"\"\"\": \"\"\"\"my-research\"\"\"\", \"\"\"\"description\"\"\"\": \"\"\"\"Agent for searching my research documents\"\"\"\", \"\"\"\"system_prompt\"\"\"\": \"\"\"\"You are a research assistant. Help users find information from their documents.\"\"\"\", \"\"\"\"tools\"\"\"\": [\"\"\"\"rag_search\"\"\"\"], \"\"\"\"is_active\"\"\"\": true}')",
-      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYTIxNTZkNi1mYzcxLTQ2NjEtOGY1Mi03OGZmNTY4ZDM4MTgiLCJleHAiOjE3NjQ3NTM3NzcsInR5cGUiOiJhY2Nlc3MifQ.iW95ZkP01ZtsPPL-Jxwvgap1wEwfFD5Bm3HTM6XZh-Y\")",
-      "Bash(echo \"=== Test 1: Create user agent with rag_search tool ===\" curl -s -X POST \"http://localhost:8000/api/agents\" -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\" -d '{\"\"\"\"name\"\"\"\": \"\"\"\"My Research Agent\"\"\"\", \"\"\"\"slug\"\"\"\": \"\"\"\"my-research\"\"\"\", \"\"\"\"description\"\"\"\": \"\"\"\"Agent for searching my documents\"\"\"\", \"\"\"\"system_prompt\"\"\"\": \"\"\"\"You are a research assistant.\"\"\"\", \"\"\"\"tools\"\"\"\": [\"\"\"\"rag_search\"\"\"\"], \"\"\"\"is_active\"\"\"\": true}')",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(cat:*)",
       "Bash(npm run check:*)",
       "Bash(npm install:*)",
-      "Bash(npx shadcn-svelte@latest add alert-dialog:*)",
+      "Bash(npx shadcn-svelte@latest add:*)",
       "Bash(uv run ruff check:*)",
       "Bash(uv run python:*)",
       "WebSearch",
@@ -17,7 +14,15 @@
       "Bash(ls:*)",
       "Bash(uv run alembic:*)",
       "Bash(uv pip install:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(jq:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git checkout:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npx svelte-kit sync)"
     ],
     "deny": [],
     "ask": []

@@ -147,11 +147,15 @@
 </svelte:head>
 
 <div class="flex h-full flex-col">
-	<!-- Header -->
-	<div class="bg-background p-6">
-		<div class="mx-auto max-w-3xl">
-			<div class="flex items-center justify-between">
-				<h1 class="text-2xl font-semibold">Chats</h1>
+	<!-- Content -->
+	<div class="flex-1 overflow-auto p-8">
+		<div class="mx-auto max-w-6xl">
+			<!-- Header -->
+			<div class="flex items-center justify-between mb-6">
+				<div class="flex items-center gap-3">
+					<MessageSquare class="size-8 text-foreground" />
+					<h1 class="text-3xl font-semibold text-foreground">Chats</h1>
+				</div>
 				<Button href="/chat">
 					<Plus class="mr-2 size-4" />
 					New chat
@@ -159,20 +163,20 @@
 			</div>
 
 			<!-- Search -->
-			<div class="mt-4 relative">
+			<div class="relative mb-6">
 				<Search
-					class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+					class="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
 				/>
 				<Input
 					type="search"
 					placeholder="Search your chats..."
-					class="pl-9 h-12 text-base"
+					class="pl-12 h-12 bg-white border-border rounded-lg text-base"
 					bind:value={searchQuery}
 				/>
 			</div>
 
 			<!-- Stats & Select toggle -->
-			<div class="mt-4 flex items-center justify-between">
+			<div class="flex items-center justify-between mb-4">
 				<span class="text-sm text-muted-foreground">
 					{conversations.length} chat{conversations.length !== 1 ? 's' : ''}
 				</span>
@@ -182,12 +186,8 @@
 					</Button>
 				{/if}
 			</div>
-		</div>
-	</div>
 
-	<!-- Content -->
-	<div class="flex-1 overflow-auto">
-		<div class="mx-auto max-w-3xl">
+			<div class="bg-white rounded-lg border border-border">
 			<!-- Selection toolbar -->
 			{#if selectMode}
 				<div class="flex items-center gap-3 px-6 py-3 bg-muted/50">
@@ -222,7 +222,7 @@
 					></div>
 				</div>
 			{:else if filteredConversations.length === 0}
-				<div class="flex flex-col items-center p-12 text-center">
+				<div class="flex flex-col items-center p-12 text-center rounded-lg">
 					<MessageSquare class="size-12 text-muted-foreground/50" />
 					<h3 class="mt-4 text-lg font-medium">No conversations</h3>
 					<p class="mt-1 text-sm text-muted-foreground">
@@ -307,6 +307,7 @@
 					{/each}
 				</div>
 			{/if}
+			</div>
 		</div>
 	</div>
 </div>
