@@ -262,7 +262,7 @@
 			{:else}
 				<!-- Messages -->
 				{#each messages as message (message.id)}
-					<ChatMessage role={message.role} content={message.content} sources={message.sources} />
+					<ChatMessage role={message.role} content={message.content} sources={message.sources} createdAt={message.createdAt} />
 				{/each}
 
 				<!-- Streaming message -->

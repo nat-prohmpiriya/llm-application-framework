@@ -10,9 +10,15 @@
 		content: string;
 		isStreaming?: boolean;
 		sources?: SourceInfo[];
+		createdAt?: Date;
 	}
 
-	let { role, content, isStreaming = false, sources = [] }: Props = $props();
+	let { role, content, isStreaming = false, sources = [], createdAt }: Props = $props();
+
+	// Format time as HH:MM (24-hour format)
+	let formattedTime = $derived(
+		createdAt ? createdAt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }) : null
+	);
 
 	let isUser = $derived(role === 'user');
 
@@ -61,6 +67,13 @@
 		<!-- Sources -->
 		{#if !isUser && !isStreaming && sources.length > 0}
 			<SourceCitation {sources} />
+		{/if}
+
+		<!-- Timestamp -->
+		{#if formattedTime && !isStreaming}
+			<div class="mt-1 text-right text-xs text-muted-foreground/70">
+				{formattedTime}
+			</div>
 		{/if}
 	</div>
 
