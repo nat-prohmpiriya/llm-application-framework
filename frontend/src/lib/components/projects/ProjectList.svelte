@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { FolderOpen, Plus, FileText } from 'lucide-svelte';
@@ -19,15 +20,25 @@
 	}>();
 
 	let isAllSelected = $derived(currentProjectId === null);
+
+	function handleProjectClick(project: Project) {
+		onSelect(project.id);
+		goto(`/projects/${project.id}`);
+	}
 </script>
 
 <div class="flex flex-col gap-2">
 	<!-- Header with title and add button -->
 	<div class="flex items-center justify-between px-1">
 		<span class="text-sm font-medium text-muted-foreground">Projects</span>
-		<Button variant="ghost" size="icon" class="h-6 w-6" onclick={onCreate}>
+		<button
+			type="button"
+			class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground"
+			onclick={onCreate}
+			disabled={loading}
+		>
 			<Plus class="h-4 w-4" />
-		</Button>
+		</button>
 	</div>
 
 	<!-- All Documents option -->
@@ -47,15 +58,15 @@
 			<div class="flex flex-col gap-1">
 				{#each projects as project (project.id)}
 					{@const isSelected = currentProjectId === project.id}
-					<Button
-						variant={isSelected ? 'secondary' : 'ghost'}
-						class="w-full justify-start gap-2"
-						onclick={() => onSelect(project.id)}
+					<button
+						type="button"
+						class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground {isSelected ? 'bg-secondary text-secondary-foreground' : ''}"
+						onclick={() => handleProjectClick(project)}
 						disabled={loading}
 					>
 						<FolderOpen class="h-4 w-4 shrink-0" />
 						<span class="truncate">{project.name}</span>
-					</Button>
+					</button>
 				{/each}
 			</div>
 		</ScrollArea>

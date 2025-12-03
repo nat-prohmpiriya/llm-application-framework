@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { MessageSquare, FileText, Users, Database, Sliders, Settings, ChevronLeft, ChevronRight, FolderOpen, Plus, ExternalLink } from 'lucide-svelte';
+	import { MessageSquare, FileText, Users, Database, Sliders, Settings, ChevronLeft, ChevronRight, FolderOpen } from 'lucide-svelte';
 	import ProjectList from '$lib/components/projects/ProjectList.svelte';
 	import type { Project } from '$lib/api';
 
@@ -51,12 +50,6 @@
 	function handleProjectSelect(id: string | null) {
 		onProjectSelect?.(id);
 	}
-
-	function handleViewProject() {
-		if (currentProjectId) {
-			goto(`/projects/${currentProjectId}`);
-		}
-	}
 </script>
 
 <aside class="flex h-full flex-col border-r bg-background transition-all duration-300 {collapsed ? 'w-16' : 'w-64'}">
@@ -70,18 +63,6 @@
 				onSelect={handleProjectSelect}
 				onCreate={onNewProject ?? (() => {})}
 			/>
-			<!-- View project details link -->
-			{#if currentProjectId}
-				<Button
-					variant="ghost"
-					size="sm"
-					class="mt-2 w-full justify-start text-xs text-muted-foreground"
-					onclick={handleViewProject}
-				>
-					<ExternalLink class="mr-2 h-3 w-3" />
-					View Project Details
-				</Button>
-			{/if}
 		</div>
 		<Separator />
 	{:else}

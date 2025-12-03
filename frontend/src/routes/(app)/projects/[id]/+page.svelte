@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import {
 		FolderOpen,
 		FileText,
@@ -41,18 +40,21 @@
 	// Derived
 	let documentIds = $derived(documents.map((d) => d.id));
 
-	onMount(async () => {
-		await loadProject();
+	// Load project when projectId changes
+	$effect(() => {
+		if (data.projectId) {
+			loadProject(data.projectId);
+		}
 	});
 
-	async function loadProject() {
+	async function loadProject(projectId: string) {
 		loading = true;
 		error = null;
 
 		try {
 			const [projectData, documentsData] = await Promise.all([
-				projectsApi.get(data.projectId),
-				projectsApi.getDocuments(data.projectId)
+				projectsApi.get(projectId),
+				projectsApi.getDocuments(projectId)
 			]);
 
 			project = projectData;
@@ -227,7 +229,7 @@
 		{:else if error}
 			<div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
 				<p class="text-destructive">{error}</p>
-				<Button variant="outline" class="mt-4" onclick={loadProject}>
+				<Button variant="outline" class="mt-4" onclick={() => loadProject(data.projectId)}>
 					Try Again
 				</Button>
 			</div>

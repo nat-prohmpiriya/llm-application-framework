@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { auth, projectStore } from '$lib/stores';
 	import { getUserDisplayName } from '$lib/types';
@@ -20,9 +19,9 @@
 		}
 	});
 
-	// Initialize and load projects on mount
-	onMount(() => {
-		if (auth.isAuthenticated) {
+	// Load projects when auth is ready
+	$effect(() => {
+		if (auth.isAuthenticated && !projectStore.initialized && !projectStore.loading) {
 			projectStore.initialize();
 			projectStore.loadProjects();
 		}
