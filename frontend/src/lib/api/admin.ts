@@ -360,3 +360,93 @@ export async function bulkUserAction(
 		})
 	});
 }
+
+// User Detail Types
+export interface UserSubscriptionDetail {
+	id: string;
+	plan_name: string;
+	plan_display_name: string;
+	status: string;
+	billing_interval: string;
+	price: number;
+	start_date: string;
+	current_period_start: string | null;
+	current_period_end: string | null;
+	trial_end_date: string | null;
+	canceled_at: string | null;
+	cancel_reason: string | null;
+}
+
+export interface UserUsageDetail {
+	tokens_used_today: number;
+	tokens_used_this_month: number;
+	tokens_limit: number;
+	requests_today: number;
+	requests_this_month: number;
+	cost_today: number;
+	cost_this_month: number;
+}
+
+export interface UserUsageHistory {
+	date: string;
+	tokens: number;
+	requests: number;
+	cost: number;
+}
+
+export interface UserConversationSummary {
+	id: string;
+	title: string | null;
+	message_count: number;
+	last_message_at: string | null;
+	created_at: string;
+}
+
+export interface UserDocumentSummary {
+	id: string;
+	filename: string;
+	file_type: string;
+	file_size: number;
+	status: string;
+	chunk_count: number;
+	created_at: string;
+}
+
+export interface UserInvoiceSummary {
+	id: string;
+	invoice_number: string;
+	status: string;
+	total: number;
+	amount_paid: number;
+	currency: string;
+	invoice_date: string;
+	paid_at: string | null;
+}
+
+export interface UserDetail {
+	id: string;
+	email: string;
+	username: string;
+	first_name: string | null;
+	last_name: string | null;
+	is_active: boolean;
+	is_superuser: boolean;
+	tier: string;
+	created_at: string;
+	updated_at: string;
+	active_subscription: UserSubscriptionDetail | null;
+	subscription_history: UserSubscriptionDetail[];
+	usage: UserUsageDetail;
+	usage_history: UserUsageHistory[];
+	total_conversations: number;
+	total_documents: number;
+	total_projects: number;
+	total_revenue: number;
+	invoices: UserInvoiceSummary[];
+	recent_conversations: UserConversationSummary[];
+	recent_documents: UserDocumentSummary[];
+}
+
+export async function getUserDetail(id: string): Promise<UserDetail> {
+	return fetchApi<UserDetail>(`/api/admin/users/${id}/detail`);
+}

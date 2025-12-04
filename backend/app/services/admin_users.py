@@ -4,16 +4,18 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.tracing import traced
-from app.models.invoice import Invoice
+from app.models.conversation import Conversation
+from app.models.document import Document
+from app.models.message import Message
 from app.models.plan import Plan
-from app.models.subscription import Subscription, SubscriptionStatus
+from app.models.subscription import BillingInterval, Subscription, SubscriptionStatus
 from app.models.user import User
-from app.schemas.admin import AdminUserResponse, AdminUserUpdate
+from app.schemas.admin import AdminUserUpdate
 
 
 @traced()
@@ -340,3 +342,186 @@ def calculate_pages(total: int, per_page: int) -> int:
     if per_page <= 0:
         return 0
     return (total + per_page - 1) // per_page
+
+
+@traced()
+async def get_user_detail(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> dict[str, Any] | None:
+    """Get complete user details for admin user detail page."""
+    # Get user with all relationships
+    query = (
+        select(User)
+        .where(User.id == user_id)
+        .options(
+            selectinload(User.subscriptions).selectinload(Subscription.plan),
+            selectinload(User.invoices),
+            selectinload(User.projects),
+        )
+    )
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        return None
+
+    # Get conversation count and recent conversations
+    conv_count_query = select(func.count()).where(Conversation.user_id == user_id)
+    conv_count_result = await db.execute(conv_count_query)
+    total_conversations = conv_count_result.scalar() or 0
+
+    # Get recent conversations with message count
+    recent_conv_query = (
+        select(
+            Conversation.id,
+            Conversation.title,
+            Conversation.created_at,
+            func.count(Message.id).label("message_count"),
+            func.max(Message.created_at).label("last_message_at"),
+        )
+        .outerjoin(Message, Message.conversation_id == Conversation.id)
+        .where(Conversation.user_id == user_id)
+        .group_by(Conversation.id)
+        .order_by(Conversation.created_at.desc())
+        .limit(10)
+    )
+    recent_conv_result = await db.execute(recent_conv_query)
+    recent_conversations = [
+        {
+            "id": row.id,
+            "title": row.title,
+            "message_count": row.message_count,
+            "last_message_at": row.last_message_at,
+            "created_at": row.created_at,
+        }
+        for row in recent_conv_result.all()
+    ]
+
+    # Get document count and recent documents
+    doc_count_query = select(func.count()).where(Document.user_id == user_id)
+    doc_count_result = await db.execute(doc_count_query)
+    total_documents = doc_count_result.scalar() or 0
+
+    recent_doc_query = (
+        select(Document)
+        .where(Document.user_id == user_id)
+        .order_by(Document.created_at.desc())
+        .limit(10)
+    )
+    recent_doc_result = await db.execute(recent_doc_query)
+    recent_documents = [
+        {
+            "id": doc.id,
+            "filename": doc.filename,
+            "file_type": doc.file_type,
+            "file_size": doc.file_size,
+            "status": doc.status.value if hasattr(doc.status, "value") else doc.status,
+            "chunk_count": doc.chunk_count,
+            "created_at": doc.created_at,
+        }
+        for doc in recent_doc_result.scalars().all()
+    ]
+
+    # Get project count
+    total_projects = len(user.projects)
+
+    # Process subscriptions
+    active_subscription = None
+    subscription_history = []
+
+    for sub in user.subscriptions:
+        price = 0.0
+        if sub.plan:
+            price = (
+                float(sub.plan.price_yearly or 0)
+                if sub.billing_interval == BillingInterval.YEARLY
+                else float(sub.plan.price_monthly or 0)
+            )
+
+        sub_detail = {
+            "id": sub.id,
+            "plan_name": sub.plan.name if sub.plan else "Unknown",
+            "plan_display_name": sub.plan.display_name if sub.plan else "Unknown",
+            "status": sub.status.value if hasattr(sub.status, "value") else sub.status,
+            "billing_interval": sub.billing_interval.value if hasattr(sub.billing_interval, "value") else sub.billing_interval,
+            "price": price,
+            "start_date": sub.start_date,
+            "current_period_start": sub.current_period_start,
+            "current_period_end": sub.current_period_end,
+            "trial_end_date": sub.trial_end_date,
+            "canceled_at": sub.canceled_at,
+            "cancel_reason": sub.cancel_reason,
+        }
+
+        if sub.status == SubscriptionStatus.ACTIVE:
+            active_subscription = sub_detail
+        subscription_history.append(sub_detail)
+
+    # Calculate usage stats (placeholder - TODO: integrate with LiteLLM)
+    usage = {
+        "tokens_used_today": 0,
+        "tokens_used_this_month": 0,
+        "tokens_limit": active_subscription["price"] * 10000 if active_subscription else 10000,  # placeholder
+        "requests_today": 0,
+        "requests_this_month": 0,
+        "cost_today": 0.0,
+        "cost_this_month": 0.0,
+    }
+
+    # Generate usage history (placeholder - TODO: integrate with LiteLLM)
+    usage_history = []
+    for i in range(30):
+        date = datetime.utcnow() - timedelta(days=29 - i)
+        usage_history.append({
+            "date": date.strftime("%Y-%m-%d"),
+            "tokens": 0,
+            "requests": 0,
+            "cost": 0.0,
+        })
+
+    # Process invoices
+    invoices = [
+        {
+            "id": inv.id,
+            "invoice_number": inv.invoice_number,
+            "status": inv.status.value if hasattr(inv.status, "value") else inv.status,
+            "total": float(inv.total),
+            "amount_paid": float(inv.amount_paid),
+            "currency": inv.currency,
+            "invoice_date": inv.invoice_date,
+            "paid_at": inv.paid_at,
+        }
+        for inv in sorted(user.invoices, key=lambda x: x.invoice_date, reverse=True)[:10]
+    ]
+
+    # Calculate total revenue
+    total_revenue = 0.0
+    for inv in user.invoices:
+        status_value = inv.status.value if hasattr(inv.status, "value") else inv.status
+        if status_value == "paid":
+            total_revenue += float(inv.amount_paid or 0)
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+        "tier": user.tier,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+        "active_subscription": active_subscription,
+        "subscription_history": subscription_history,
+        "usage": usage,
+        "usage_history": usage_history,
+        "total_conversations": total_conversations,
+        "total_documents": total_documents,
+        "total_projects": total_projects,
+        "total_revenue": total_revenue,
+        "invoices": invoices,
+        "recent_conversations": recent_conversations,
+        "recent_documents": recent_documents,
+    }

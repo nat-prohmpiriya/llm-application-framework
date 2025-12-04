@@ -155,3 +155,134 @@ class SuspendUserRequest(BaseModel):
     """Request to suspend a user."""
 
     reason: str | None = None
+
+
+# User Detail schemas
+class UserSubscriptionDetail(BaseModel):
+    """Subscription detail for user detail page."""
+
+    id: uuid.UUID
+    plan_name: str
+    plan_display_name: str
+    status: str
+    billing_interval: str
+    price: float
+    start_date: datetime
+    current_period_start: datetime | None
+    current_period_end: datetime | None
+    trial_end_date: datetime | None
+    canceled_at: datetime | None
+    cancel_reason: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserUsageDetail(BaseModel):
+    """Usage statistics for user detail page."""
+
+    tokens_used_today: int
+    tokens_used_this_month: int
+    tokens_limit: int
+    requests_today: int
+    requests_this_month: int
+    cost_today: float
+    cost_this_month: float
+
+
+class UserUsageHistory(BaseModel):
+    """Daily usage history for charts."""
+
+    date: str
+    tokens: int
+    requests: int
+    cost: float
+
+
+class UserConversationSummary(BaseModel):
+    """Conversation summary for user detail page."""
+
+    id: uuid.UUID
+    title: str | None
+    message_count: int
+    last_message_at: datetime | None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserDocumentSummary(BaseModel):
+    """Document summary for user detail page."""
+
+    id: uuid.UUID
+    filename: str
+    file_type: str
+    file_size: int
+    status: str
+    chunk_count: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserActivityLog(BaseModel):
+    """Activity log entry for user detail page."""
+
+    id: uuid.UUID
+    action: str
+    description: str
+    metadata: dict | None
+    created_at: datetime
+
+
+class UserInvoiceSummary(BaseModel):
+    """Invoice summary for user detail page."""
+
+    id: uuid.UUID
+    invoice_number: str
+    status: str
+    total: float
+    amount_paid: float
+    currency: str
+    invoice_date: datetime
+    paid_at: datetime | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserDetailResponse(BaseModel):
+    """Complete user detail response."""
+
+    # Basic info
+    id: uuid.UUID
+    email: str
+    username: str
+    first_name: str | None
+    last_name: str | None
+    is_active: bool
+    is_superuser: bool
+    tier: str
+    created_at: datetime
+    updated_at: datetime
+
+    # Subscription & billing
+    active_subscription: UserSubscriptionDetail | None
+    subscription_history: list[UserSubscriptionDetail]
+
+    # Usage stats
+    usage: UserUsageDetail
+    usage_history: list[UserUsageHistory]
+
+    # Content counts
+    total_conversations: int
+    total_documents: int
+    total_projects: int
+
+    # Revenue
+    total_revenue: float
+    invoices: list[UserInvoiceSummary]
+
+    # Recent activity
+    recent_conversations: list[UserConversationSummary]
+    recent_documents: list[UserDocumentSummary]
+
+    model_config = ConfigDict(from_attributes=True)

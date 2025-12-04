@@ -17,6 +17,7 @@ from app.schemas.admin import (
     ChangeUserPlanRequest,
     SuspendUserRequest,
     UserActionResult,
+    UserDetailResponse,
 )
 from app.schemas.base import BaseResponse, MessageResponse
 from app.services import admin_users as user_service
@@ -89,6 +90,26 @@ async def get_user(
     return BaseResponse(
         trace_id=ctx.trace_id,
         data=AdminUserResponse(**users[0]),
+    )
+
+
+@router.get("/{user_id}/detail")
+async def get_user_detail(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+) -> BaseResponse[UserDetailResponse]:
+    """Get complete user details for admin detail page (admin only)."""
+    ctx = get_context()
+
+    user_detail = await user_service.get_user_detail(db=db, user_id=user_id)
+
+    if not user_detail:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return BaseResponse(
+        trace_id=ctx.trace_id,
+        data=UserDetailResponse(**user_detail),
     )
 
 
