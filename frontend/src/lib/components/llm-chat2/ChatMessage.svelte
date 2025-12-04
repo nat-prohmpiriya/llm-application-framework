@@ -5,7 +5,7 @@
 	import { markedHighlight } from 'marked-highlight';
 	import hljs from 'highlight.js';
 	import 'highlight.js/styles/github-dark.css';
-	import type { SourceInfo } from '$lib/api/chat';
+	import type { SourceInfo, UsageInfo, LatencyInfo } from '$lib/api/chat';
 	import { Button } from '$lib/components/ui/button';
 	import * as Avatar from '$lib/components/ui/avatar';
 
@@ -32,6 +32,8 @@
 		isStreaming?: boolean;
 		isThinking?: boolean;
 		sources?: SourceInfo[];
+		usage?: UsageInfo;
+		latency?: LatencyInfo;
 		createdAt?: Date;
 		isLastAssistant?: boolean;
 		isLastUser?: boolean;
@@ -45,6 +47,8 @@
 		isStreaming = false,
 		isThinking = false,
 		sources = [],
+		usage,
+		latency,
 		createdAt,
 		isLastAssistant = false,
 		isLastUser = false,

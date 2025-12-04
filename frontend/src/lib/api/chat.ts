@@ -69,12 +69,26 @@ export interface ChatResponse {
 	sources?: SourceInfo[];
 }
 
+export interface LatencyInfo {
+	retrieval_ms?: number;
+	llm_ms?: number;
+}
+
 export interface StreamChunk {
 	content: string;
 	done: boolean;
 	error?: string;
 	conversation_id?: string;
 	sources?: SourceInfo[];
+	usage?: UsageInfo;
+	latency?: LatencyInfo;
+}
+
+export interface StreamDoneData {
+	conversation_id?: string;
+	sources?: SourceInfo[];
+	usage?: UsageInfo;
+	latency?: LatencyInfo;
 }
 
 export const chatApi = {
@@ -103,7 +117,7 @@ export const chatApi = {
 	stream: async (
 		data: ChatRequest,
 		onChunk: (content: string) => void,
-		onDone: (conversationId?: string, sources?: SourceInfo[]) => void,
+		onDone: (doneData: StreamDoneData) => void,
 		onError: (error: string) => void,
 		abortSignal?: AbortSignal
 	): Promise<{ traceId: string | null; conversationId: string | null }> => {
@@ -164,7 +178,12 @@ export const chatApi = {
 							return { traceId, conversationId };
 						}
 						if (data.done) {
-							onDone(conversationId || undefined, data.sources);
+							onDone({
+								conversation_id: conversationId || undefined,
+								sources: data.sources,
+								usage: data.usage,
+								latency: data.latency
+							});
 							return { traceId, conversationId };
 						}
 						if (data.content) {
@@ -177,7 +196,7 @@ export const chatApi = {
 			}
 		}
 
-		onDone(conversationId || undefined, undefined);
+		onDone({ conversation_id: conversationId || undefined });
 		return { traceId, conversationId };
 	},
 };

@@ -96,13 +96,13 @@
 					streamingContent += content;
 					scrollToBottom();
 				},
-				(newConversationId, sources) => {
+				(doneData) => {
 					const assistantMessage: Message = {
 						id: crypto.randomUUID(),
 						role: 'assistant',
 						content: streamingContent,
 						createdAt: new Date(),
-						sources
+						sources: doneData.sources
 					};
 					messages = [...messages, assistantMessage];
 					streamingContent = '';
@@ -110,8 +110,8 @@
 					isLoading = false;
 					abortController = null;
 
-					if (newConversationId && !conversationId) {
-						conversationId = newConversationId;
+					if (doneData.conversation_id && !conversationId) {
+						conversationId = doneData.conversation_id;
 					}
 				},
 				(errorMsg) => {

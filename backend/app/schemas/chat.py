@@ -76,6 +76,13 @@ class UsageInfo(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class LatencyInfo(BaseModel):
+    """Latency information for chat responses."""
+
+    retrieval_ms: int | None = None
+    llm_ms: int | None = None
+
+
 class SourceInfo(BaseModel):
     """Source document information for RAG responses."""
 

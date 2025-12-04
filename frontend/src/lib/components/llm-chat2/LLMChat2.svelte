@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { chatApi, type ModelInfo, type SourceInfo } from '$lib/api/chat';
+	import { chatApi, type ModelInfo, type SourceInfo, type UsageInfo, type LatencyInfo } from '$lib/api/chat';
 	import ChatHeader from './ChatHeader.svelte';
 	import ChatInput from './ChatInput.svelte';
 	import ChatMessage from './ChatMessage.svelte';
@@ -14,6 +14,8 @@
 		content: string;
 		createdAt: Date;
 		sources?: SourceInfo[];
+		usage?: UsageInfo;
+		latency?: LatencyInfo;
 	}
 
 	interface Props {
@@ -131,14 +133,16 @@
 					streamingContent += content;
 					scrollToBottom();
 				},
-				(newConversationId, sources) => {
-					// On done - add assistant message with sources
+				(doneData) => {
+					// On done - add assistant message with sources, usage, and latency
 					const assistantMessage: Message = {
 						id: crypto.randomUUID(),
 						role: 'assistant',
 						content: streamingContent,
 						createdAt: new Date(),
-						sources: sources
+						sources: doneData.sources,
+						usage: doneData.usage,
+						latency: doneData.latency
 					};
 					messages = [...messages, assistantMessage];
 					streamingContent = '';
@@ -147,9 +151,9 @@
 					abortController = null;
 
 					// If this was a new conversation, notify parent
-					if (newConversationId && !conversationId) {
-						conversationId = newConversationId;
-						onConversationCreated?.(newConversationId);
+					if (doneData.conversation_id && !conversationId) {
+						conversationId = doneData.conversation_id;
+						onConversationCreated?.(doneData.conversation_id);
 					}
 				},
 				(errorMsg) => {
@@ -235,13 +239,15 @@
 					streamingContent += content;
 					scrollToBottom();
 				},
-				(_newConversationId, sources) => {
+				(doneData) => {
 					const assistantMessage: Message = {
 						id: crypto.randomUUID(),
 						role: 'assistant',
 						content: streamingContent,
 						createdAt: new Date(),
-						sources: sources
+						sources: doneData.sources,
+						usage: doneData.usage,
+						latency: doneData.latency
 					};
 					messages = [...messages, assistantMessage];
 					streamingContent = '';
@@ -350,6 +356,8 @@
 						role={message.role}
 						content={message.content}
 						sources={message.sources}
+						usage={message.usage}
+						latency={message.latency}
 						createdAt={message.createdAt}
 						isLastAssistant={isLastAssistantMessage(index)}
 						isLastUser={isLastUserMessage(index)}

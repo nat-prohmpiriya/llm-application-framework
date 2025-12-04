@@ -166,14 +166,14 @@
 					streamingContent += content;
 					scrollToBottom();
 				},
-				(newConversationId, sources) => {
+				(doneData) => {
 					// On done - add assistant message with sources
 					const assistantMessage: Message = {
 						id: crypto.randomUUID(),
 						role: 'assistant',
 						content: streamingContent,
 						createdAt: new Date(),
-						sources: sources
+						sources: doneData.sources
 					};
 					messages = [...messages, assistantMessage];
 					streamingContent = '';
@@ -182,9 +182,9 @@
 					abortController = null;
 
 					// If this was a new conversation, notify parent
-					if (newConversationId && !conversationId) {
-						conversationId = newConversationId;
-						onConversationCreated?.(newConversationId);
+					if (doneData.conversation_id && !conversationId) {
+						conversationId = doneData.conversation_id;
+						onConversationCreated?.(doneData.conversation_id);
 					}
 				},
 				(errorMsg) => {
@@ -316,13 +316,13 @@
 					streamingContent += content;
 					scrollToBottom();
 				},
-				(_newConversationId, sources) => {
+				(doneData) => {
 					const assistantMessage: Message = {
 						id: crypto.randomUUID(),
 						role: 'assistant',
 						content: streamingContent,
 						createdAt: new Date(),
-						sources: sources
+						sources: doneData.sources
 					};
 					messages = [...messages, assistantMessage];
 					streamingContent = '';

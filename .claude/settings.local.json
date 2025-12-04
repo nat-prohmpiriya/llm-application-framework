@@ -22,7 +22,10 @@
       "Bash(git restore:*)",
       "Bash(git checkout:*)",
       "Bash(xargs kill:*)",
-      "Bash(npx svelte-kit sync)"
+      "Bash(npx svelte-kit sync)",
+      "Bash(grep:*)",
+      "Bash(docker compose:*)",
+      "WebFetch(domain:docs.litellm.ai)"
     ],
     "deny": [],
     "ask": []

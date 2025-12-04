@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 import uuid
 from datetime import datetime
 
@@ -10,18 +11,25 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.engine import AgentEngine
 from app.core.context import get_context
 from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
 from app.providers.llm import ChatMessage as LLMChatMessage
 from app.providers.llm import llm_client
 from app.schemas.base import BaseResponse
-from app.schemas.chat import AgentChatResponse, ChatMessage, ChatRequest, ChatResponse, SourceInfo, UsageInfo
+from app.schemas.chat import (
+    AgentChatResponse,
+    ChatMessage,
+    ChatRequest,
+    ChatResponse,
+    SourceInfo,
+    UsageInfo,
+)
 from app.services import agent as agent_service
 from app.services import conversation as conversation_service
 from app.services import rag as rag_service
 from app.services.models import fetch_models_from_litellm
-from app.agents.engine import AgentEngine
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -285,6 +293,7 @@ async def chat(
                 messages.insert(0, LLMChatMessage(role="system", content=rag_prompt))
                 # Fetch document names for sources
                 from sqlalchemy import select
+
                 from app.models.document import Document
                 document_ids = list(set(chunk.document_id for chunk in chunks))
                 stmt = select(Document.id, Document.filename).where(Document.id.in_(document_ids))
@@ -404,7 +413,9 @@ async def chat_stream(
 
     # RAG: Retrieve context and build system prompt if enabled
     sources_data: list[dict] | None = None
+    retrieval_latency_ms: int | None = None
     if data.use_rag:
+        retrieval_start = time.time()
         chunks = await rag_service.retrieve_context(
             db=db,
             query=data.message,
@@ -420,6 +431,7 @@ async def chat_stream(
             messages.insert(0, LLMChatMessage(role="system", content=rag_prompt))
             # Fetch document names for sources
             from sqlalchemy import select
+
             from app.models.document import Document
             document_ids = list(set(chunk.document_id for chunk in chunks))
             stmt = select(Document.id, Document.filename).where(Document.id.in_(document_ids))
@@ -427,12 +439,14 @@ async def chat_stream(
             doc_names = {row.id: row.filename for row in result.all()}
             # Build sources list for streaming response
             sources_data = rag_service.format_sources(chunks, doc_names)
+            retrieval_latency_ms = int((time.time() - retrieval_start) * 1000)
 
     # Get user_id for closure
     user_id_str = str(current_user.id)
 
     async def event_generator():
         full_response = ""
+        llm_start = time.time()
         try:
             # Stream response with user_id for usage tracking
             async for chunk in llm_client.chat_completion_stream(
@@ -454,6 +468,9 @@ async def chat_stream(
                 })
                 yield f"data: {event_data}\n\n"
 
+            # Calculate LLM latency
+            llm_latency_ms = int((time.time() - llm_start) * 1000)
+
             # Save assistant message after streaming completes
             # Note: We can't get token count from streaming response
             await conversation_service.add_message(
@@ -464,7 +481,7 @@ async def chat_stream(
                 tokens_used=None,
             )
 
-            # Send done signal with sources if RAG was used
+            # Send done signal with sources and latency data
             done_data = {
                 "content": "",
                 "done": True,
@@ -472,6 +489,13 @@ async def chat_stream(
             }
             if sources_data:
                 done_data["sources"] = sources_data
+
+            # Add latency data
+            done_data["latency"] = {
+                "retrieval_ms": retrieval_latency_ms,
+                "llm_ms": llm_latency_ms,
+            }
+
             yield f"data: {json.dumps(done_data)}\n\n"
 
         except Exception as e:
