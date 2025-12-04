@@ -233,6 +233,12 @@ export async function cancelSubscription(
 	});
 }
 
+export async function reactivateSubscription(id: string): Promise<Subscription> {
+	return fetchApi<Subscription>(`/api/admin/subscriptions/${id}/reactivate`, {
+		method: 'POST'
+	});
+}
+
 // User Management Types
 export interface AdminUser {
 	id: string;
