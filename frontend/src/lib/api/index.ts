@@ -6,3 +6,4 @@ export { documentsApi, type Document, type DocumentDetail, type DocumentStatus }
 export { projectsApi, type Project, type ProjectDetail, type ProjectCreate, type ProjectUpdate } from './projects';
 export { agentsApi, type AgentInfo, type AgentDetail, type AgentCreate, type AgentUpdate, type ToolInfo, type AgentListResponse, type AgentToolsResponse } from './agents';
 export { profileApi, type UserProfile, type UserStats, type UserUsage, type UserUpdate, type ChangePasswordRequest, type DeleteAccountRequest } from './profile';
+export * from './admin';

@@ -1,6 +1,5 @@
-# Admin Panel Features - RAG Agent Platform
+# Admin Panel - RAG Agent Platform
 
-> **Last Updated:** December 2024
 > **Status:** Planning
 > **Related:** Phase 7 in todos.md, LiteLLM Features (15-note-feature-litellm.md)
 
@@ -8,579 +7,357 @@
 
 ## Overview
 
-Admin Panel for managing RAG Agent Platform using LiteLLM capabilities.
+Admin Panel for managing users, subscriptions, usage, and system settings.
+
+**Key Integrations:**
+- LiteLLM: Virtual Keys, Cost Tracking, Rate Limiting
+- Stripe: Subscription billing
+- PostgreSQL: Users, Plans, Subscriptions
 
 ---
 
-## 1. Dashboard
+## Pricing Plans
 
-### 1.1 System Overview
+| Plan | Price | Tokens/mo | Requests/day | Documents | Models |
+|------|-------|-----------|--------------|-----------|--------|
+| **Free** | $0 | 50K | 20 | 5 | Basic |
+| **Pro** | $19/mo | 500K | 200 | 50 | Standard |
+| **Premium** | $49/mo | 2M | 1,000 | 200 | All |
+| **Enterprise** | Custom | Unlimited | Unlimited | Unlimited | All + Custom |
 
-| Widget | Data | Source |
-|--------|------|--------|
-| **Total Users** | Total users, active today | PostgreSQL |
-| **Total Requests** | Requests today/month | LiteLLM `/spend/logs` |
-| **Total Cost** | Cost today/month (USD) | LiteLLM `/spend/logs` |
-| **Revenue** | Subscription revenue | Stripe/Payment DB |
-| **Active Conversations** | Active conversations count | PostgreSQL |
-| **Documents Indexed** | Documents, chunks total | PostgreSQL |
-| **System Health** | LiteLLM, DB, Redis status | Health checks |
-
-### 1.2 Quick Charts
-
-| Chart | Description |
-|-------|-------------|
-| **Usage Over Time** | Line chart: requests/day (7 days) |
-| **Cost Over Time** | Line chart: cost/day (7 days) |
-| **Revenue Over Time** | Line chart: revenue/day (30 days) |
-| **Top Models** | Pie chart: usage by model |
-| **Top Users** | Bar chart: top 10 users by usage |
-| **Subscribers by Plan** | Pie chart: Free vs Pro vs Premium |
+**Model Access:**
+- Basic: gemini-2.0-flash, llama-3.3-70b
+- Standard: + gemini-2.0-pro
+- All: + claude-3.5-sonnet, gpt-4-turbo
 
 ---
 
-## 2. Pricing & Subscription Management
+## Implementation Tasks
 
-### 2.1 Pricing Plans
+### [x] Task 1: Database Schema
 
-| Plan | Monthly Price | Annual Price | Target Users |
-|------|---------------|--------------|--------------|
-| **Free** | $0 | $0 | Trial users, hobbyists |
-| **Pro** | $19/mo | $190/yr (save 17%) | Individual professionals |
-| **Premium** | $49/mo | $490/yr (save 17%) | Power users, small teams |
-| **Enterprise** | Custom | Custom | Large organizations |
+Create tables for plans and subscriptions.
 
-### 2.2 Plan Features Matrix
+**Tables:**
+- `plans` - pricing plans (name, price, limits, allowed_models)
+- `subscriptions` - user subscriptions (user_id, plan_id, status, stripe_id, litellm_key_id)
+- `invoices` - payment history
 
-| Feature | Free | Pro | Premium | Enterprise |
-|---------|------|-----|---------|------------|
-| **Monthly Tokens** | 50,000 | 500,000 | 2,000,000 | Unlimited |
-| **Daily Requests** | 20 | 200 | 1,000 | Unlimited |
-| **Documents** | 5 | 50 | 200 | Unlimited |
-| **Projects** | 1 | 5 | 20 | Unlimited |
-| **Custom Agents** | 1 | 5 | 20 | Unlimited |
-| **File Size Limit** | 5MB | 25MB | 100MB | 500MB |
-| **Rate Limit** | 5 req/min | 30 req/min | 100 req/min | 500 req/min |
-| **Models Access** | Basic only | All standard | All + priority | All + custom |
-| **Support** | Community | Email | Priority email | Dedicated |
-| **API Access** | No | Yes | Yes | Yes |
-| **Team Members** | - | - | 5 | Unlimited |
-| **SSO/SAML** | No | No | No | Yes |
-| **Custom Branding** | No | No | No | Yes |
-| **SLA** | No | No | 99.5% | 99.9% |
+**Reference:** Look at existing models in `backend/app/models/`
 
-### 2.3 Model Access by Plan
+---
 
-| Model | Free | Pro | Premium | Enterprise |
-|-------|------|-----|---------|------------|
-| gemini-2.0-flash | Yes | Yes | Yes | Yes |
-| llama-3.3-70b (Groq) | Yes | Yes | Yes | Yes |
-| gemini-2.0-pro | No | Yes | Yes | Yes |
-| claude-3.5-sonnet | No | No | Yes | Yes |
-| gpt-4-turbo | No | No | Yes | Yes |
-| claude-3-opus | No | No | No | Yes |
-| gpt-4o | No | No | No | Yes |
+### [x] Task 2: Plan CRUD API
 
-### 2.4 Plan Management (Admin UI)
+Backend APIs for plan management.
+
+**Location:** `backend/app/routes/admin/plans.py`
+
+**Endpoints:**
+- `GET /api/admin/plans` - List all plans
+- `POST /api/admin/plans` - Create plan
+- `PUT /api/admin/plans/:id` - Update plan
+- `DELETE /api/admin/plans/:id` - Delete plan
+
+**Requirements:**
+- Admin-only access (require_admin dependency)
+- Return subscriber count per plan
+- Sync LiteLLM keys when plan limits change
+
+---
+
+### [x] Task 3: Subscription API
+
+Backend APIs for subscription management.
+
+**Location:** `backend/app/routes/admin/subscriptions.py`
+
+**Endpoints:**
+- `GET /api/admin/subscriptions` - List subscriptions
+- `POST /api/admin/subscriptions/:id/upgrade` - Upgrade user
+- `POST /api/admin/subscriptions/:id/downgrade` - Downgrade user
+- `POST /api/admin/subscriptions/:id/cancel` - Cancel subscription
+
+**Requirements:**
+- Create LiteLLM Virtual Key when subscription created
+- Update LiteLLM key limits on plan change
+- Handle Stripe webhook events
+
+---
+
+### [x] Task 4: Admin Dashboard Page
+
+Overview page with key metrics.
+
+**Location:** `frontend/src/routes/(admin)/admin/+page.svelte`
+
+**Widgets:**
+- Total users, active today
+- Total requests today/month (from LiteLLM)
+- Total cost today/month (from LiteLLM)
+- Revenue MRR/ARR
+- Subscribers by plan (pie chart)
+- Usage over time (line chart)
+
+**Reference:** Look at existing dashboard patterns in frontend
+
+---
+
+### [] Task 5: Plan List Page
+
+Admin page to view and manage plans.
+
+**Location:** `frontend/src/routes/(admin)/admin/plans/+page.svelte`
 
 **Features:**
-- [ ] View all plans with features
-- [ ] Edit plan limits (tokens, requests, etc.)
-- [ ] Edit plan pricing
-- [ ] Create custom plans
-- [ ] Set trial period (default: 14 days Pro trial)
-- [ ] Configure model access per plan
-- [ ] Set rate limits per plan
+- Grid of plan cards showing: name, price, limits, subscriber count
+- Create plan button -> opens form
+- Edit/Delete actions per plan
+- Stats: total plans, total subscribers, MRR
 
-### 2.5 Subscription Management
+---
 
-| Column | Description |
-|--------|-------------|
-| **User** | User email + name |
-| **Plan** | Current plan (badge) |
-| **Status** | Active, Trial, Cancelled, Past Due |
-| **Started** | Subscription start date |
-| **Renews/Expires** | Next billing or expiry date |
-| **Billing Cycle** | Monthly / Annual |
-| **Revenue** | Total revenue from user |
-| **Actions** | Upgrade, Downgrade, Cancel, Extend |
+### [] Task 6: Plan Form Component
 
-**Admin Actions:**
-- [ ] Manually upgrade/downgrade user
-- [ ] Extend trial period
-- [ ] Apply discount/coupon
-- [ ] Cancel subscription
-- [ ] Refund (partial/full)
-- [ ] Gift premium access
+Form for creating/editing plans.
 
-### 2.6 Revenue Analytics
+**Location:** `frontend/src/lib/components/admin/PlanForm.svelte`
 
-| Metric | Description |
-|--------|-------------|
-| **MRR** | Monthly Recurring Revenue |
-| **ARR** | Annual Recurring Revenue |
-| **Churn Rate** | Cancellation rate (monthly) |
-| **ARPU** | Average Revenue Per User |
-| **LTV** | Lifetime Value |
-| **Conversion Rate** | Free -> Paid conversion |
-| **Trial Conversion** | Trial -> Paid conversion |
+**Sections:**
+1. Basic Info: name, slug, active toggle
+2. Pricing: monthly price, annual price (calculate savings %)
+3. Usage Limits: tokens, requests, documents, projects, agents, file size
+4. Rate Limit: requests per minute
+5. Model Access: checkbox list grouped by tier (basic/standard/premium)
+6. Features: API access, priority support, team members
+
+**Behaviors:**
+- Auto-generate slug from name
+- Slider for token limits
+- Quick-select buttons for model tiers
+
+---
+
+### [] Task 7: User List Page
+
+Admin page to view and manage users.
+
+**Location:** `frontend/src/routes/(admin)/admin/users/+page.svelte`
+
+**Columns:**
+- Email, Name, Plan (badge), Status, Usage (progress bar), Revenue, Last Active
+
+**Features:**
+- Search by email/name
+- Filter by plan, status
+- Bulk actions: change plan, suspend
+
+**Actions per user:**
+- Edit, Change Plan, Suspend, Ban, Delete
+
+---
+
+### [] Task 8: User Detail Page
+
+Detailed view of single user.
+
+**Location:** `frontend/src/routes/(admin)/admin/users/[id]/+page.svelte`
+
+**Sections:**
+- Profile info
+- Subscription & billing
+- Usage stats + chart
+- Recent conversations
+- Documents uploaded
+- Activity log
+
+---
+
+### [] Task 9: Usage Analytics Page
+
+View usage and cost analytics.
+
+**Location:** `frontend/src/routes/(admin)/admin/usage/+page.svelte`
+
+**Data from LiteLLM:**
+- `/spend/logs` - Detailed logs
+- `/spend/users` - Usage by user
+
+**Views:**
+- By User: tokens, requests, cost per user
+- By Model: usage breakdown by model
+- By Plan: cost vs revenue per plan
 
 **Charts:**
-- Revenue over time (MRR trend)
-- Subscribers by plan (pie chart)
-- New vs churned subscribers
-- Revenue by plan breakdown
-- Cohort retention analysis
-
-### 2.7 Billing Integration
-
-**Payment Providers:**
-| Provider | Features |
-|----------|----------|
-| **Stripe** | Cards, subscriptions, invoices |
-| **Paddle** | Tax handling, global payments |
-| **LemonSqueezy** | Simple setup, tax compliant |
-
-**Billing Features:**
-- [ ] Automatic recurring billing
-- [ ] Invoice generation
-- [ ] Failed payment handling
-- [ ] Dunning emails (payment retry)
-- [ ] Usage-based billing (overage)
-- [ ] Proration on plan changes
-- [ ] Tax calculation (VAT, etc.)
+- Daily cost trend
+- Cost by model (pie)
+- Revenue vs Cost (profit margin)
 
 ---
 
-## 3. User Management
+### [] Task 10: LiteLLM Integration Service
 
-### 3.1 User List
+Service for managing LiteLLM Virtual Keys.
 
-| Column | Description |
-|--------|-------------|
-| **Email** | Email + avatar |
-| **Name** | First + Last name |
-| **Plan** | Free / Pro / Premium / Enterprise (badge) |
-| **Status** | Active / Trial / Suspended / Banned |
-| **Usage** | Tokens used / Quota (progress bar) |
-| **Revenue** | Total paid (USD) |
-| **Created** | Registration date |
-| **Last Active** | Last activity timestamp |
-| **Actions** | Edit, Upgrade, Suspend, Ban |
+**Location:** `backend/app/services/litellm_service.py`
 
-**Features:**
-- [ ] Search by email/name
-- [ ] Filter by plan, status
-- [ ] Sort by any column
-- [ ] Bulk actions (change plan, suspend)
-- [ ] Export to CSV
+**Functions:**
+- `create_key_for_user(user_id, plan)` - Create virtual key with plan limits
+- `update_key(key_id, plan)` - Update key limits
+- `delete_key(key_id)` - Delete key
+- `get_usage(user_id)` - Get user's usage
 
-### 3.2 User Detail Page
-
-| Section | Content |
-|---------|---------|
-| **Profile** | Email, name, avatar, created date |
-| **Subscription** | Current plan, billing info, payment history |
-| **Usage Stats** | Tokens, requests, cost (daily/monthly) |
-| **Usage Chart** | Line chart: usage over time |
-| **Conversations** | List of recent conversations |
-| **Documents** | List of uploaded documents |
-| **Projects** | List of projects owned |
-| **Agents** | List of custom agents created |
-| **Activity Log** | Recent actions (login, chat, upload) |
-| **Billing History** | Invoices, payments, refunds |
-
-### 3.3 User Actions
-
-| Action | Description | Confirmation |
-|--------|-------------|--------------|
-| **Change Plan** | Upgrade/downgrade subscription | Yes |
-| **Edit Limits** | Override plan limits for user | Yes |
-| **Extend Trial** | Add days to trial period | Yes |
-| **Gift Premium** | Give free premium access | Yes + duration |
-| **Suspend** | Temporarily disable account | Yes |
-| **Ban** | Permanently ban user | Yes + reason |
-| **Delete** | Delete user and all data | Yes + type email |
-| **Reset Password** | Send reset password email | Yes |
-| **Impersonate** | Login as user (debug) | Yes |
+**LiteLLM Key Config:**
+- max_budget: based on plan
+- tpm_limit: plan.monthly_tokens / 30 / 24 / 60
+- rpm_limit: plan.rate_limit_rpm
+- models: plan.allowed_models
 
 ---
 
-## 4. Usage & Cost Analytics
+### [] Task 11: Stripe Integration
 
-### 4.1 Usage Dashboard
+Payment processing with Stripe.
 
-| Metric | Description | API Source |
-|--------|-------------|------------|
-| **Total Tokens** | Input + Output tokens | LiteLLM `/spend/logs` |
-| **Total Requests** | API calls count | LiteLLM `/spend/logs` |
-| **Total Cost** | LLM cost (USD) | LiteLLM `/spend/logs` |
-| **Gross Margin** | Revenue - Cost | Calculated |
-| **Avg Cost/User** | Average cost per user | Calculated |
+**Location:** `backend/app/services/stripe_service.py`
 
-### 4.2 Usage Breakdown
+**Functions:**
+- Create checkout session
+- Handle webhook events (subscription.created, updated, deleted)
+- Create customer portal session
 
-| View | Description |
-|------|-------------|
-| **By User** | Table: user, tokens, requests, cost, plan |
-| **By Plan** | Table: plan, users, tokens, cost, revenue |
-| **By Model** | Table: model, tokens, requests, cost |
-| **By Date** | Table: date, tokens, requests, cost |
-| **By Project** | Table: project, tokens, requests, cost |
-
-### 4.3 Cost vs Revenue Analysis
-
-| Metric | Description |
-|--------|-------------|
-| **LLM Cost** | Cost of API calls to LLM providers |
-| **Revenue** | Subscription revenue |
-| **Gross Profit** | Revenue - LLM Cost |
-| **Margin %** | (Profit / Revenue) * 100 |
-| **Cost per Plan** | Avg LLM cost per plan tier |
-
-**Profitability Chart:**
-- Revenue vs Cost over time
-- Profit margin trend
-- Cost breakdown by model
-- Revenue breakdown by plan
+**Webhook Events:**
+- `customer.subscription.created` -> Create subscription, create LiteLLM key
+- `customer.subscription.updated` -> Update subscription, update key
+- `customer.subscription.deleted` -> Cancel subscription, delete key
+- `invoice.paid` -> Record invoice
 
 ---
 
-## 5. Quota & Rate Limit Management
+### [] Task 12: Quota & Rate Limit UI
 
-### 5.1 Plan Limits (via LiteLLM Virtual Keys)
+Show users their usage and limits.
 
-Each user gets a LiteLLM Virtual Key with limits based on their plan:
+**Location:** `frontend/src/lib/components/UsageWidget.svelte`
 
-```yaml
-# Example: Pro user key generation
-POST /key/generate
-{
-  "user_id": "user_123",
-  "max_budget": 10,           # $10/month budget
-  "budget_duration": "monthly",
-  "tpm_limit": 100000,        # 100K tokens/min
-  "rpm_limit": 30,            # 30 requests/min
-  "models": ["gemini-2.0-flash", "gemini-2.0-pro", "llama-3.3-70b"]
-}
-```
+**Display:**
+- Tokens used / limit (progress bar)
+- Requests today / limit
+- Days until reset
 
-### 5.2 Quota Monitoring
-
-| Alert | Condition | Action |
-|-------|-----------|--------|
-| **Warning** | Usage >= 80% | Email + in-app notification |
-| **Critical** | Usage >= 95% | Email + upgrade prompt |
-| **Blocked** | Usage >= 100% | Block requests + upgrade modal |
-
-### 5.3 Overage Handling
-
-| Strategy | Description |
-|----------|-------------|
-| **Hard Block** | Block when limit reached |
-| **Soft Block** | Allow overage, charge extra |
-| **Upgrade Prompt** | Suggest plan upgrade |
-| **Grace Period** | Allow 10% overage free |
+**Alerts:**
+- 80%: Warning notification
+- 95%: Upgrade prompt
+- 100%: Blocked modal with upgrade CTA
 
 ---
 
-## 6. Model Management
+### [] Task 13: System Monitoring Page
 
-### 6.1 Available Models
+Health and performance monitoring.
 
-| Model | Provider | Cost/1K tokens | Available Plans |
-|-------|----------|----------------|-----------------|
-| gemini-2.0-flash | Google | $0.0001 | All |
-| llama-3.3-70b | Groq | $0.0001 | All |
-| gemini-2.0-pro | Google | $0.001 | Pro+ |
-| claude-3.5-sonnet | Anthropic | $0.003 | Premium+ |
-| gpt-4-turbo | OpenAI | $0.01 | Premium+ |
-| claude-3-opus | Anthropic | $0.015 | Enterprise |
+**Location:** `frontend/src/routes/(admin)/admin/system/+page.svelte`
 
-### 6.2 Model Configuration
+**Health Status:**
+- LiteLLM Proxy: status, uptime, RPS
+- PostgreSQL: connections, query time
+- Redis: memory, hit rate
 
-- [ ] Enable/Disable models
-- [ ] Set model access by plan
-- [ ] Configure fallback chains
-- [ ] Set custom pricing markup
-- [ ] Priority queue for paid plans
+**Alerts Config:**
+- High latency threshold
+- Error rate threshold
+- Notification channels (Slack, Email)
 
 ---
 
-## 7. Content Moderation (Guardrails)
+### [] Task 14: Audit Logs Page
 
-### 7.1 Guardrail Configuration
+Track admin actions.
 
-| Guardrail | Status | Mode | Description |
-|-----------|--------|------|-------------|
-| **Prompt Injection** | Active | pre_call | Detect jailbreak attempts |
-| **PII Detection** | Active | pre_call | Detect personal info |
-| **Content Safety** | Active | during_call | Filter inappropriate content |
-| **Thai PII** | Active | pre_call | Detect Thai PII (Presidio) |
+**Location:** `frontend/src/routes/(admin)/admin/audit/+page.svelte`
 
-### 7.2 Moderation Queue
-
-- [ ] Review flagged content
-- [ ] Approve/Reject actions
-- [ ] User warnings
-- [ ] Escalate to ban
-
----
-
-## 8. System Monitoring
-
-### 8.1 Health Status
-
-| Service | Metrics |
-|---------|---------|
-| **LiteLLM Proxy** | Status, Uptime, RPS, Latency |
-| **PostgreSQL** | Connections, Query time, Disk |
-| **Redis** | Memory, Hit rate, Connections |
-| **Payment Gateway** | Status, Failed payments |
-
-### 8.2 Alerts
-
-| Alert | Condition | Channel |
-|-------|-----------|---------|
-| **High Latency** | P99 > 5s | Slack, Email |
-| **High Error Rate** | Error > 5% | Slack, Email |
-| **Service Down** | Health check fail | Slack, Email, SMS |
-| **Payment Failed** | Payment failure | Email |
-| **High Churn** | Churn > threshold | Email |
-
----
-
-## 9. Audit Logs
-
-### 9.1 Admin Actions Log
-
-| Column | Description |
-|--------|-------------|
-| **Timestamp** | Time of action |
-| **Admin** | Admin who performed action |
-| **Action** | Action type |
-| **Target** | User/Resource affected |
-| **Details** | Change details |
-| **IP Address** | Admin IP |
+**Log Fields:**
+- Timestamp, Admin, Action, Target, Details, IP
 
 **Tracked Actions:**
 - Plan changes
-- Manual upgrades/downgrades
+- User upgrades/downgrades
 - Refunds
-- User suspend/ban
-- Limit overrides
-- Model changes
+- Suspend/Ban
 
 ---
 
-## 10. Settings
+### [] Task 15: Settings Page
 
-### 10.1 General Settings
+Admin settings configuration.
 
-| Setting | Description |
-|---------|-------------|
-| **Site Name** | Application name |
-| **Default Plan** | Default plan for new users |
-| **Trial Period** | Trial duration (days) |
-| **Registration** | Open / Invite-only / Closed |
+**Location:** `frontend/src/routes/(admin)/admin/settings/+page.svelte`
 
-### 10.2 Payment Settings
-
-| Setting | Description |
-|---------|-------------|
-| **Payment Provider** | Stripe / Paddle / LemonSqueezy |
-| **Currency** | USD, EUR, THB, etc. |
-| **Tax Handling** | Automatic / Manual |
-| **Invoice Settings** | Company info, template |
-
-### 10.3 LiteLLM Settings
-
-| Setting | Description |
-|---------|-------------|
-| **Proxy URL** | LiteLLM proxy endpoint |
-| **Master Key** | Admin API key |
-| **Routing Strategy** | Default routing |
-| **Cache Settings** | Redis TTL, semantic cache |
+**Sections:**
+- General: site name, default plan, trial period
+- Payment: Stripe keys, currency
+- LiteLLM: proxy URL, master key
+- Notifications: Slack webhook, email templates
 
 ---
 
-## Implementation Phases
+## API Summary
 
-### Phase 1: Core Admin (MVP)
-- [ ] Admin authentication
-- [ ] Dashboard with basic stats
-- [ ] User list with search/filter
-- [ ] Basic plan management (Free/Pro/Premium)
-- [ ] Manual plan assignment
-
-### Phase 2: Subscription & Billing
-- [ ] Stripe integration
-- [ ] Subscription management
-- [ ] Payment processing
-- [ ] Invoice generation
-- [ ] Revenue dashboard
-
-### Phase 3: Usage & Limits
-- [ ] LiteLLM Virtual Keys per user
-- [ ] Usage tracking integration
-- [ ] Quota monitoring
-- [ ] Overage handling
-- [ ] Cost vs Revenue analytics
-
-### Phase 4: Advanced Features
-- [ ] Model access control by plan
-- [ ] Rate limiting per plan
-- [ ] Guardrails configuration
-- [ ] Audit logs
-
----
-
-## API Endpoints
-
-### Subscription APIs
+### Admin APIs
 ```
-GET    /api/admin/plans              # List all plans
-POST   /api/admin/plans              # Create plan
-PUT    /api/admin/plans/:id          # Update plan
-DELETE /api/admin/plans/:id          # Delete plan
-
-GET    /api/admin/subscriptions      # List subscriptions
-PUT    /api/admin/subscriptions/:id  # Update subscription
-POST   /api/admin/subscriptions/:id/cancel    # Cancel
-POST   /api/admin/subscriptions/:id/upgrade   # Upgrade
-POST   /api/admin/subscriptions/:id/downgrade # Downgrade
-
-GET    /api/admin/revenue            # Revenue stats
-GET    /api/admin/revenue/by-plan    # Revenue by plan
-GET    /api/admin/revenue/mrr        # MRR data
+/api/admin/dashboard       - Dashboard stats
+/api/admin/plans           - Plan CRUD
+/api/admin/subscriptions   - Subscription management
+/api/admin/users           - User management
+/api/admin/usage           - Usage analytics
+/api/admin/audit           - Audit logs
+/api/admin/settings        - Settings
 ```
 
-### User APIs
+### LiteLLM APIs (Proxy)
 ```
-GET    /api/admin/users              # User list
-GET    /api/admin/users/:id          # User detail
-PUT    /api/admin/users/:id          # Update user
-POST   /api/admin/users/:id/suspend  # Suspend
-POST   /api/admin/users/:id/ban      # Ban
-DELETE /api/admin/users/:id          # Delete
-```
-
-### LiteLLM Integration
-```
-POST   /key/generate                 # Create virtual key for user
-GET    /key/info                     # Key info (limits, usage)
-POST   /key/update                   # Update key limits
-GET    /spend/logs                   # Usage logs
-GET    /spend/users                  # Usage by user
+POST /key/generate         - Create virtual key
+POST /key/update           - Update key limits
+GET  /key/info             - Key details
+GET  /spend/logs           - Usage logs
+GET  /spend/users          - Usage by user
 ```
 
 ---
 
-## Database Schema (New Tables)
+## Implementation Order
 
-### plans
-```sql
-CREATE TABLE plans (
-  id UUID PRIMARY KEY,
-  name VARCHAR(50) NOT NULL,         -- Free, Pro, Premium, Enterprise
-  slug VARCHAR(50) UNIQUE NOT NULL,
-  monthly_price DECIMAL(10,2),
-  annual_price DECIMAL(10,2),
-  monthly_tokens INTEGER,
-  daily_requests INTEGER,
-  max_documents INTEGER,
-  max_projects INTEGER,
-  max_agents INTEGER,
-  max_file_size_mb INTEGER,
-  rate_limit_rpm INTEGER,
-  allowed_models TEXT[],             -- Array of model names
-  features JSONB,                    -- Additional features
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
+**Phase 1: Foundation**
+1. Task 1: Database Schema
+2. Task 2: Plan CRUD API
+3. Task 10: LiteLLM Integration Service
 
-### subscriptions
-```sql
-CREATE TABLE subscriptions (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  plan_id UUID REFERENCES plans(id),
-  status VARCHAR(20),                -- active, trial, cancelled, past_due
-  billing_cycle VARCHAR(20),         -- monthly, annual
-  current_period_start TIMESTAMP,
-  current_period_end TIMESTAMP,
-  trial_end TIMESTAMP,
-  cancelled_at TIMESTAMP,
-  stripe_subscription_id VARCHAR(100),
-  stripe_customer_id VARCHAR(100),
-  litellm_key_id VARCHAR(100),       -- LiteLLM virtual key
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
+**Phase 2: Admin UI**
+4. Task 4: Admin Dashboard
+5. Task 5: Plan List Page
+6. Task 6: Plan Form Component
+7. Task 7: User List Page
 
-### invoices
-```sql
-CREATE TABLE invoices (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  subscription_id UUID REFERENCES subscriptions(id),
-  stripe_invoice_id VARCHAR(100),
-  amount DECIMAL(10,2),
-  currency VARCHAR(3) DEFAULT 'USD',
-  status VARCHAR(20),                -- paid, pending, failed
-  paid_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
+**Phase 3: Billing**
+8. Task 3: Subscription API
+9. Task 11: Stripe Integration
+10. Task 12: Quota UI
+
+**Phase 4: Monitoring**
+11. Task 8: User Detail Page
+12. Task 9: Usage Analytics
+13. Task 13: System Monitoring
+14. Task 14: Audit Logs
+15. Task 15: Settings
 
 ---
 
-## Pricing Strategy Recommendations
+## Notes
 
-### 1. Value-Based Pricing
-- Free: ให้ลองใช้พอให้เห็นคุณค่า
-- Pro: เหมาะกับ individual ที่ใช้เป็นประจำ
-- Premium: power users ที่ต้องการ model ดีๆ
-
-### 2. Usage Limits ที่เหมาะสม
-- Free: ให้ใช้ได้ ~20 conversations/day
-- Pro: พอสำหรับการใช้งานประจำวัน
-- Premium: ไม่ต้องกังวลเรื่อง limits
-
-### 3. Model Access เป็น Differentiator
-- Free: Basic models (fast, cheap)
-- Pro: Standard models (balanced)
-- Premium: Best models (Claude, GPT-4)
-
-### 4. Trial Strategy
-- 14-day Pro trial for new users
-- No credit card required for trial
-- Email reminder at day 7, 12, 14
-
----
-
-## Revenue Projections Example
-
-| Metric | Month 1 | Month 6 | Month 12 |
-|--------|---------|---------|----------|
-| **Total Users** | 100 | 1,000 | 5,000 |
-| **Free** | 80 (80%) | 700 (70%) | 3,500 (70%) |
-| **Pro ($19)** | 15 (15%) | 240 (24%) | 1,200 (24%) |
-| **Premium ($49)** | 5 (5%) | 60 (6%) | 300 (6%) |
-| **MRR** | $530 | $7,500 | $37,500 |
-| **ARR** | $6,360 | $90,000 | $450,000 |
-
----
-
-## References
-
-- [Stripe Subscriptions](https://stripe.com/docs/billing/subscriptions)
-- [LiteLLM Virtual Keys](https://docs.litellm.ai/docs/proxy/virtual_keys)
-- [LiteLLM Cost Tracking](https://docs.litellm.ai/docs/proxy/cost_tracking)
-- [SaaS Pricing Best Practices](https://www.priceintelligently.com/)
+- Claude Code can look at existing patterns in codebase
+- Follow existing code style (Svelte 5 runes, FastAPI patterns)
+- Use shadcn-svelte components
+- LiteLLM docs: https://docs.litellm.ai/docs/proxy/virtual_keys
 
 ---
 

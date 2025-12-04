@@ -84,8 +84,9 @@ async def get_current_user(
     Raises:
         InvalidCredentialsError: If user not found or inactive
     """
-    from app.models.user import User
     from sqlalchemy import select
+
+    from app.models.user import User
 
     stmt = select(User).where(User.id == user_id)
     result = await db.execute(stmt)
@@ -98,3 +99,20 @@ async def get_current_user(
         raise InvalidCredentialsError("User account is disabled")
 
     return user
+
+
+async def require_admin(
+    current_user=Depends(get_current_user),
+):
+    """
+    Dependency to require admin privileges.
+
+    Raises:
+        InvalidCredentialsError: If user is not a superuser
+    """
+    from app.core.exceptions import ForbiddenError
+
+    if not current_user.is_superuser:
+        raise ForbiddenError("Admin access required")
+
+    return current_user
