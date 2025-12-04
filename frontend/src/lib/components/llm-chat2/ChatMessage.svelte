@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { User, Bot, Copy, Check, RefreshCw, Pencil, X, ThumbsUp, ThumbsDown } from 'lucide-svelte';
+	import { User, Bot, Copy, Check, RefreshCw, Pencil, X, ThumbsUp, ThumbsDown, Bug } from 'lucide-svelte';
+	import DebugPanel from './DebugPanel.svelte';
 	import { cn } from '$lib/utils';
 	import { Marked } from 'marked';
 	import { markedHighlight } from 'marked-highlight';
@@ -69,6 +70,14 @@
 	// Edit mode state
 	let isEditing = $state(false);
 	let editContent = $state('');
+
+	// Debug panel state
+	let showDebugPanel = $state(false);
+
+	// Check if debug info is available
+	let hasDebugInfo = $derived(
+		(sources && sources.length > 0) || usage || latency
+	);
 
 	async function handleCopy() {
 		await navigator.clipboard.writeText(content);
@@ -227,7 +236,23 @@
 							>
 								<ThumbsDown class="size-4" />
 							</Button>
+							{#if hasDebugInfo}
+								<Button
+									variant="ghost"
+									size="icon"
+									class="size-8 text-muted-foreground hover:text-foreground {showDebugPanel ? 'bg-muted' : ''}"
+									onclick={() => (showDebugPanel = !showDebugPanel)}
+									title="Debug info"
+								>
+									<Bug class="size-4" />
+								</Button>
+							{/if}
 						</div>
+					{/if}
+
+					<!-- Debug Panel -->
+					{#if showDebugPanel && hasDebugInfo}
+						<DebugPanel {sources} {usage} {latency} />
 					{/if}
 				{/if}
 			</div>
