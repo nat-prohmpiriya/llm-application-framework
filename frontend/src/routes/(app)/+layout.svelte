@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { auth } from '$lib/stores';
+	import { auth, notificationStore } from '$lib/stores';
 	import { getUserDisplayName } from '$lib/types';
 	import AppLayout from '$lib/components/layout/AppLayout.svelte';
 
@@ -15,6 +15,7 @@
 	});
 
 	function handleLogout() {
+		notificationStore.reset();
 		auth.logout();
 		goto('/login');
 	}

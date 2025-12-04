@@ -7,8 +7,9 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import { MessageSquare, MessageSquarePlus, FileText, Bot, ChevronLeft, ChevronRight, LogOut, User, Settings, Image, Folder, Trash2, Loader2 } from 'lucide-svelte';
+	import { MessageSquare, MessageSquarePlus, FileText, Bot, ChevronLeft, ChevronRight, LogOut, User, Settings, Image, Folder, Trash2, Loader2, Bell } from 'lucide-svelte';
 	import { chatStore, type Conversation } from '$lib/stores';
+	import { NotificationBell } from '$lib/components/notifications';
 
 	let {
 		collapsed = false,
@@ -255,9 +256,24 @@
 		</div>
 	{/if}
 
-	<!-- User Avatar & Toggle button -->
+	<!-- Notification & User Avatar & Toggle button -->
 	<div class="mt-auto p-2">
 		{#if collapsed}
+			<!-- Collapsed: Notification bell -->
+			{#if user}
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						{#snippet child({ props })}
+							<div {...props} class="flex justify-center mb-1">
+								<NotificationBell />
+							</div>
+						{/snippet}
+					</Tooltip.Trigger>
+					<Tooltip.Portal>
+						<Tooltip.Content side="right">Notifications</Tooltip.Content>
+					</Tooltip.Portal>
+				</Tooltip.Root>
+			{/if}
 			<!-- Collapsed: User avatar icon -->
 			{#if user}
 				<Tooltip.Root>
@@ -340,7 +356,13 @@
 				</Tooltip.Portal>
 			</Tooltip.Root>
 		{:else}
-			<!-- Expanded: User info + logout -->
+			<!-- Expanded: Notification + User info + logout -->
+			{#if user}
+				<div class="flex items-center gap-2 px-3 py-2 mb-1">
+					<NotificationBell />
+					<span class="text-sm text-muted-foreground">Notifications</span>
+				</div>
+			{/if}
 			{#if user}
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>

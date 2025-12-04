@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import Sidebar from './Sidebar.svelte';
 	import { Menu } from 'lucide-svelte';
-	import { sidebar } from '$lib/stores';
+	import { sidebar, notificationStore } from '$lib/stores';
 
 	let { children, user, onLogout }: {
 		children?: Snippet;
@@ -17,6 +17,13 @@
 
 	onMount(() => {
 		sidebar.initialize();
+		// Start notification polling when app loads (user is authenticated)
+		notificationStore.startPolling();
+	});
+
+	onDestroy(() => {
+		// Stop polling when component is destroyed
+		notificationStore.stopPolling();
 	});
 
 	function handleToggle() {
