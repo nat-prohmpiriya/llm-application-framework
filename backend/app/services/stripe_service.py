@@ -624,6 +624,41 @@ async def handle_invoice_paid(
     await db.commit()
     await db.refresh(invoice)
 
+    # Send payment success notification
+    try:
+        from app.services import notification as notification_service
+
+        # Get plan name for notification
+        plan_name = None
+        if subscription:
+            plan_result = await db.execute(
+                select(Plan).where(Plan.id == subscription.plan_id)
+            )
+            plan = plan_result.scalar_one_or_none()
+            if plan:
+                plan_name = plan.display_name
+
+        await notification_service.notify_payment_success(
+            db=db,
+            user_id=user.id,
+            amount=invoice.total,
+            currency=invoice.currency,
+            invoice_number=invoice.invoice_number,
+            plan_name=plan_name,
+        )
+
+        # Also send subscription renewed notification if it's a renewal
+        if subscription and plan_name:
+            await notification_service.notify_subscription_renewed(
+                db=db,
+                user_id=user.id,
+                plan_name=plan_name,
+                next_billing_date=subscription.current_period_end,
+            )
+    except Exception as e:
+        # Don't let notification errors affect the main flow
+        logger.error(f"Failed to send payment notification: {e}")
+
     logger.info(f"Recorded invoice {invoice.invoice_number} for user {user.id}")
     return invoice
 
@@ -666,6 +701,24 @@ async def handle_invoice_payment_failed(
         db.add(subscription)
         await db.commit()
         logger.info(f"Marked subscription {subscription.id} as past_due")
+
+        # Send payment failed notification
+        try:
+            from app.services import notification as notification_service
+
+            amount = stripe_invoice.amount_due / 100 if stripe_invoice.amount_due else 0
+            currency = stripe_invoice.currency.upper() if stripe_invoice.currency else "USD"
+
+            await notification_service.notify_payment_failed(
+                db=db,
+                user_id=subscription.user_id,
+                amount=amount,
+                currency=currency,
+                reason="Payment could not be processed. Please update your payment method.",
+            )
+        except Exception as e:
+            # Don't let notification errors affect the main flow
+            logger.error(f"Failed to send payment failed notification: {e}")
 
 
 # ============================================================================

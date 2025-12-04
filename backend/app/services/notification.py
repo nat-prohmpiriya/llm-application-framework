@@ -336,3 +336,338 @@ async def should_send_notification(
 def calculate_pages(total: int, per_page: int) -> int:
     """Calculate total number of pages."""
     return (total + per_page - 1) // per_page if total > 0 else 0
+
+
+# ============================================================================
+# Billing Notification Helpers
+# ============================================================================
+
+
+async def notify_quota_warning(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    quota_type: str,
+    used: int,
+    limit: int,
+    percentage: float,
+) -> Notification | None:
+    """
+    Send notification when quota reaches 80% threshold.
+
+    Args:
+        db: Database session
+        user_id: User to notify
+        quota_type: Type of quota (tokens, documents, projects)
+        used: Current usage
+        limit: Total limit
+        percentage: Usage percentage
+
+    Returns:
+        Created notification or None if preferences disabled
+    """
+    try:
+        if not await should_send_notification(
+            db, user_id, NotificationCategory.BILLING, "in_app"
+        ):
+            return None
+
+        quota_labels = {
+            "tokens": "Token",
+            "documents": "Document",
+            "projects": "Project",
+        }
+        label = quota_labels.get(quota_type, quota_type.title())
+
+        return await create_notification(
+            db=db,
+            user_id=user_id,
+            type=NotificationType.QUOTA_WARNING,
+            category=NotificationCategory.BILLING,
+            title=f"{label} Quota Warning",
+            message=f"You've used {percentage:.0f}% of your {quota_type} quota ({used:,} of {limit:,}). Consider upgrading your plan to avoid interruptions.",
+            priority=NotificationPriority.HIGH,
+            action_url="/profile",
+            extra_data={
+                "quota_type": quota_type,
+                "used": used,
+                "limit": limit,
+                "percentage": percentage,
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to create quota warning notification: {e}")
+        return None
+
+
+async def notify_quota_exceeded(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    quota_type: str,
+    used: int,
+    limit: int,
+) -> Notification | None:
+    """
+    Send notification when quota is exceeded.
+
+    Args:
+        db: Database session
+        user_id: User to notify
+        quota_type: Type of quota (tokens, documents, projects)
+        used: Current usage
+        limit: Total limit
+
+    Returns:
+        Created notification or None if preferences disabled
+    """
+    try:
+        if not await should_send_notification(
+            db, user_id, NotificationCategory.BILLING, "in_app"
+        ):
+            return None
+
+        quota_labels = {
+            "tokens": "Token",
+            "documents": "Document",
+            "projects": "Project",
+        }
+        label = quota_labels.get(quota_type, quota_type.title())
+
+        return await create_notification(
+            db=db,
+            user_id=user_id,
+            type=NotificationType.QUOTA_EXCEEDED,
+            category=NotificationCategory.BILLING,
+            title=f"{label} Quota Exceeded",
+            message=f"You've exceeded your {quota_type} quota ({used:,} of {limit:,}). Please upgrade your plan to continue using this feature.",
+            priority=NotificationPriority.CRITICAL,
+            action_url="/profile",
+            extra_data={
+                "quota_type": quota_type,
+                "used": used,
+                "limit": limit,
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to create quota exceeded notification: {e}")
+        return None
+
+
+async def notify_payment_success(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    amount: float,
+    currency: str,
+    invoice_number: str | None = None,
+    plan_name: str | None = None,
+) -> Notification | None:
+    """
+    Send notification when payment is successful.
+
+    Args:
+        db: Database session
+        user_id: User to notify
+        amount: Payment amount
+        currency: Currency code
+        invoice_number: Optional invoice number
+        plan_name: Optional plan name
+
+    Returns:
+        Created notification or None if preferences disabled
+    """
+    try:
+        if not await should_send_notification(
+            db, user_id, NotificationCategory.BILLING, "in_app"
+        ):
+            return None
+
+        currency_symbols = {"USD": "$", "EUR": "€", "GBP": "£", "THB": "฿"}
+        symbol = currency_symbols.get(currency.upper(), currency.upper() + " ")
+
+        message = f"Payment of {symbol}{amount:.2f} was successful."
+        if plan_name:
+            message = f"Payment of {symbol}{amount:.2f} for {plan_name} plan was successful."
+        if invoice_number:
+            message += f" Invoice: {invoice_number}"
+
+        return await create_notification(
+            db=db,
+            user_id=user_id,
+            type=NotificationType.PAYMENT_SUCCESS,
+            category=NotificationCategory.BILLING,
+            title="Payment Successful",
+            message=message,
+            priority=NotificationPriority.LOW,
+            action_url="/profile",
+            extra_data={
+                "amount": amount,
+                "currency": currency,
+                "invoice_number": invoice_number,
+                "plan_name": plan_name,
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to create payment success notification: {e}")
+        return None
+
+
+async def notify_payment_failed(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    amount: float,
+    currency: str,
+    reason: str | None = None,
+) -> Notification | None:
+    """
+    Send notification when payment fails.
+
+    Args:
+        db: Database session
+        user_id: User to notify
+        amount: Payment amount
+        currency: Currency code
+        reason: Optional failure reason
+
+    Returns:
+        Created notification or None if preferences disabled
+    """
+    try:
+        if not await should_send_notification(
+            db, user_id, NotificationCategory.BILLING, "in_app"
+        ):
+            return None
+
+        currency_symbols = {"USD": "$", "EUR": "€", "GBP": "£", "THB": "฿"}
+        symbol = currency_symbols.get(currency.upper(), currency.upper() + " ")
+
+        message = f"Payment of {symbol}{amount:.2f} failed."
+        if reason:
+            message += f" Reason: {reason}"
+        message += " Please update your payment method to avoid service interruption."
+
+        return await create_notification(
+            db=db,
+            user_id=user_id,
+            type=NotificationType.PAYMENT_FAILED,
+            category=NotificationCategory.BILLING,
+            title="Payment Failed",
+            message=message,
+            priority=NotificationPriority.CRITICAL,
+            action_url="/profile",
+            extra_data={
+                "amount": amount,
+                "currency": currency,
+                "reason": reason,
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to create payment failed notification: {e}")
+        return None
+
+
+async def notify_subscription_renewed(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    plan_name: str,
+    next_billing_date: datetime | None = None,
+) -> Notification | None:
+    """
+    Send notification when subscription is renewed.
+
+    Args:
+        db: Database session
+        user_id: User to notify
+        plan_name: Name of the plan
+        next_billing_date: Next billing date
+
+    Returns:
+        Created notification or None if preferences disabled
+    """
+    try:
+        if not await should_send_notification(
+            db, user_id, NotificationCategory.BILLING, "in_app"
+        ):
+            return None
+
+        message = f"Your {plan_name} subscription has been renewed."
+        if next_billing_date:
+            message += f" Next billing date: {next_billing_date.strftime('%B %d, %Y')}."
+
+        return await create_notification(
+            db=db,
+            user_id=user_id,
+            type=NotificationType.SUBSCRIPTION_RENEWED,
+            category=NotificationCategory.BILLING,
+            title="Subscription Renewed",
+            message=message,
+            priority=NotificationPriority.LOW,
+            action_url="/profile",
+            extra_data={
+                "plan_name": plan_name,
+                "next_billing_date": next_billing_date.isoformat() if next_billing_date else None,
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to create subscription renewed notification: {e}")
+        return None
+
+
+async def notify_subscription_expiring(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    plan_name: str,
+    expiry_date: datetime,
+    days_remaining: int,
+) -> Notification | None:
+    """
+    Send notification when subscription is about to expire.
+
+    Args:
+        db: Database session
+        user_id: User to notify
+        plan_name: Name of the plan
+        expiry_date: Expiration date
+        days_remaining: Days until expiration
+
+    Returns:
+        Created notification or None if preferences disabled
+    """
+    try:
+        if not await should_send_notification(
+            db, user_id, NotificationCategory.BILLING, "in_app"
+        ):
+            return None
+
+        if days_remaining <= 1:
+            message = f"Your {plan_name} subscription expires tomorrow!"
+            priority = NotificationPriority.CRITICAL
+        elif days_remaining <= 3:
+            message = f"Your {plan_name} subscription expires in {days_remaining} days."
+            priority = NotificationPriority.HIGH
+        else:
+            message = f"Your {plan_name} subscription will expire on {expiry_date.strftime('%B %d, %Y')} ({days_remaining} days remaining)."
+            priority = NotificationPriority.MEDIUM
+
+        return await create_notification(
+            db=db,
+            user_id=user_id,
+            type=NotificationType.SUBSCRIPTION_EXPIRING,
+            category=NotificationCategory.BILLING,
+            title="Subscription Expiring Soon",
+            message=message,
+            priority=priority,
+            action_url="/profile",
+            extra_data={
+                "plan_name": plan_name,
+                "expiry_date": expiry_date.isoformat(),
+                "days_remaining": days_remaining,
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to create subscription expiring notification: {e}")
+        return None

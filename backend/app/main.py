@@ -20,10 +20,11 @@ from app.routes import (
     notifications,
     profile,
     projects,
+    webhooks,
 )
-from app.routes import webhooks
 from app.routes.admin import audit as admin_audit
 from app.routes.admin import dashboard as admin_dashboard
+from app.routes.admin import notifications as admin_notifications
 from app.routes.admin import plans as admin_plans
 from app.routes.admin import settings as admin_settings
 from app.routes.admin import subscriptions as admin_subscriptions
@@ -96,6 +97,7 @@ app.include_router(notifications.router, prefix="/api")
 # Admin routers
 app.include_router(admin_audit.router, prefix="/api/admin")
 app.include_router(admin_dashboard.router, prefix="/api/admin")
+app.include_router(admin_notifications.router, prefix="/api/admin")
 app.include_router(admin_plans.router, prefix="/api/admin")
 app.include_router(admin_settings.router, prefix="/api/admin")
 app.include_router(admin_subscriptions.router, prefix="/api/admin")

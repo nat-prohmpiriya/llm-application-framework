@@ -338,3 +338,70 @@ class QuotaExceededError(Exception):
         self.message = message
         self.quota_type = quota_type
         super().__init__(message)
+
+
+# ============================================================================
+# Quota Notification Helpers
+# ============================================================================
+
+
+@traced()
+async def check_and_notify_quota(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    quota_type: str = "tokens",
+) -> None:
+    """
+    Check quota status and send notifications if thresholds are reached.
+
+    This function should be called after operations that affect quota usage.
+    It will send a warning at 80% and an exceeded notification at 100%.
+
+    Args:
+        db: Database session
+        user_id: User ID to check
+        quota_type: Type of quota to check (tokens, documents, projects)
+    """
+    from app.services import notification as notification_service
+
+    try:
+        quota = await get_user_quota(db, user_id)
+
+        # Get the appropriate quota status
+        if quota_type == "tokens":
+            status = quota.tokens
+        elif quota_type == "documents":
+            status = quota.documents
+        elif quota_type == "projects":
+            status = quota.projects
+        else:
+            logger.warning(f"Unknown quota type: {quota_type}")
+            return
+
+        # Skip if unlimited
+        if status.is_unlimited:
+            return
+
+        # Check for exceeded (100%)
+        if status.is_exceeded:
+            await notification_service.notify_quota_exceeded(
+                db=db,
+                user_id=user_id,
+                quota_type=quota_type,
+                used=status.used,
+                limit=status.limit,
+            )
+        # Check for warning (80%)
+        elif status.is_warning:
+            await notification_service.notify_quota_warning(
+                db=db,
+                user_id=user_id,
+                quota_type=quota_type,
+                used=status.used,
+                limit=status.limit,
+                percentage=status.percentage,
+            )
+
+    except Exception as e:
+        # Don't let notification errors affect main operations
+        logger.error(f"Failed to check/notify quota for user {user_id}: {e}")
