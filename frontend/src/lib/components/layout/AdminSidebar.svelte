@@ -16,7 +16,9 @@
 		LogOut,
 		User,
 		ArrowLeft,
-		BarChart3
+		BarChart3,
+		Activity,
+		FileText
 	} from 'lucide-svelte';
 
 	let {
@@ -43,6 +45,8 @@
 		{ label: 'Usage', href: '/admin/usage', icon: BarChart3 },
 		{ label: 'Plans', href: '/admin/plans', icon: CreditCard },
 		{ label: 'Subscriptions', href: '/admin/subscriptions', icon: Users },
+		{ label: 'System', href: '/admin/system', icon: Activity },
+		{ label: 'Audit Logs', href: '/admin/audit', icon: FileText },
 		{ label: 'Settings', href: '/admin/settings', icon: Settings }
 	];
 
