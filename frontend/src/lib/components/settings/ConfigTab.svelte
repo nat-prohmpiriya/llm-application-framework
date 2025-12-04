@@ -166,14 +166,17 @@
 				<Card.Description>Choose how you want to receive notifications</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-4">
-				<div class="flex items-center justify-between rounded-lg border p-4">
+				<div class="flex items-center justify-between rounded-lg border p-4 opacity-60">
 					<div class="space-y-0.5">
-						<Label class="text-base">Email Notifications</Label>
+						<div class="flex items-center gap-2">
+							<Label class="text-base">Email Notifications</Label>
+							<span class="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Coming soon</span>
+						</div>
 						<p class="text-sm text-muted-foreground">
 							Receive notifications via email
 						</p>
 					</div>
-					<Switch bind:checked={emailEnabled} />
+					<Switch checked={false} disabled />
 				</div>
 
 				<div class="flex items-center justify-between rounded-lg border p-4">
@@ -210,13 +213,12 @@
 							</div>
 							<Separator class="my-3" />
 							<div class="flex items-center gap-6 pl-11">
-								<label class="flex items-center gap-2 cursor-pointer">
+								<label class="flex items-center gap-2 cursor-not-allowed opacity-50">
 									<Switch
-										checked={categorySettings[category.key].email}
-										onCheckedChange={() => toggleCategoryEmail(category.key)}
-										disabled={!emailEnabled}
+										checked={false}
+										disabled
 									/>
-									<span class="text-sm {!emailEnabled ? 'text-muted-foreground' : ''}">Email</span>
+									<span class="text-sm text-muted-foreground">Email</span>
 								</label>
 								<label class="flex items-center gap-2 cursor-pointer">
 									<Switch

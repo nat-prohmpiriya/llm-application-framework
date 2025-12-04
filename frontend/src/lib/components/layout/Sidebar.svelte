@@ -7,7 +7,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import { MessageSquare, MessageSquarePlus, FileText, Bot, ChevronLeft, ChevronRight, LogOut, User, Settings, Image, Folder, Trash2, Loader2, Bell } from 'lucide-svelte';
+	import { MessageSquare, MessageSquarePlus, FileText, Bot, ChevronLeft, ChevronRight, LogOut, User, Settings, Image, Folder, Trash2, Loader2, Bell, Sparkles } from 'lucide-svelte';
 	import { chatStore, type Conversation } from '$lib/stores';
 	import { NotificationBell } from '$lib/components/notifications';
 
@@ -321,6 +321,12 @@
 											Settings
 										</a>
 									</DropdownMenu.Item>
+									<DropdownMenu.Item>
+										<a href="/settings?tab=billing" class="flex items-center text-primary">
+											<Sparkles class="mr-2 h-4 w-4" />
+											Upgrade Plan
+										</a>
+									</DropdownMenu.Item>
 									<DropdownMenu.Separator />
 									<DropdownMenu.Item onclick={onLogout}>
 										<LogOut class="mr-2 h-4 w-4" />
@@ -393,6 +399,12 @@
 							<a href="/settings" class="flex items-center">
 								<Settings class="mr-2 h-4 w-4" />
 								Settings
+							</a>
+						</DropdownMenu.Item>
+						<DropdownMenu.Item class="cursor-pointer">
+							<a href="/settings?tab=billing" class="flex items-center text-primary">
+								<Sparkles class="mr-2 h-4 w-4" />
+								Upgrade Plan
 							</a>
 						</DropdownMenu.Item>
 						<DropdownMenu.Separator />
