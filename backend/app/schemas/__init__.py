@@ -8,6 +8,20 @@ from app.schemas.agent import (
     AgentTool,
     ToolInfo,
 )
+from app.schemas.notification import (
+    NotificationCreate,
+    NotificationResponse,
+    NotificationListResponse,
+    UnreadCountResponse,
+    MarkAsReadResponse,
+    MarkAllAsReadResponse,
+    NotificationPreferenceUpdate,
+    NotificationPreferenceResponse,
+    CategorySetting,
+    CategorySettings,
+    BroadcastNotificationCreate,
+    BroadcastNotificationResponse,
+)
 
 __all__ = [
     "AgentInfo",
@@ -16,4 +30,16 @@ __all__ = [
     "AgentListResponse",
     "AgentTool",
     "ToolInfo",
+    "NotificationCreate",
+    "NotificationResponse",
+    "NotificationListResponse",
+    "UnreadCountResponse",
+    "MarkAsReadResponse",
+    "MarkAllAsReadResponse",
+    "NotificationPreferenceUpdate",
+    "NotificationPreferenceResponse",
+    "CategorySetting",
+    "CategorySettings",
+    "BroadcastNotificationCreate",
+    "BroadcastNotificationResponse",
 ]
