@@ -286,3 +286,69 @@ class UserDetailResponse(BaseModel):
     recent_documents: list[UserDocumentSummary]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# Usage Analytics schemas
+class UsageSummary(BaseModel):
+    """Summary of usage statistics."""
+
+    total_requests: int
+    total_tokens: int
+    total_cost: float
+    requests_today: int
+    tokens_today: int
+    cost_today: float
+    period_days: int
+
+
+class UserSpend(BaseModel):
+    """User spend data from LiteLLM."""
+
+    user_id: str | None
+    user_email: str | None
+    total_spend: float
+    total_requests: int
+    total_tokens: int
+
+
+class ModelUsage(BaseModel):
+    """Usage aggregated by model."""
+
+    model: str
+    requests: int
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    cost: float
+
+
+class DailyUsageData(BaseModel):
+    """Daily usage data for charts."""
+
+    date: str
+    requests: int
+    tokens: int
+    cost: float
+
+
+class PlanUsage(BaseModel):
+    """Usage aggregated by plan."""
+
+    plan_id: str
+    plan_name: str
+    users_count: int
+    total_requests: int
+    total_tokens: int
+    total_cost: float
+    revenue: float
+    profit_margin: float
+
+
+class UsageAnalyticsResponse(BaseModel):
+    """Complete usage analytics response."""
+
+    summary: UsageSummary
+    by_user: list[dict]  # Flexible structure from LiteLLM
+    by_model: list[ModelUsage]
+    by_date: list[DailyUsageData]
+    by_plan: list[PlanUsage] = []

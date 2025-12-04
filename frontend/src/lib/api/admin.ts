@@ -450,3 +450,62 @@ export interface UserDetail {
 export async function getUserDetail(id: string): Promise<UserDetail> {
 	return fetchApi<UserDetail>(`/api/admin/users/${id}/detail`);
 }
+
+// Usage Analytics Types
+export interface UsageSummary {
+	total_requests: number;
+	total_tokens: number;
+	total_cost: number;
+	requests_today: number;
+	tokens_today: number;
+	cost_today: number;
+	period_days: number;
+}
+
+export interface ModelUsage {
+	model: string;
+	requests: number;
+	prompt_tokens: number;
+	completion_tokens: number;
+	total_tokens: number;
+	cost: number;
+}
+
+export interface DailyUsageData {
+	date: string;
+	requests: number;
+	tokens: number;
+	cost: number;
+}
+
+export interface PlanUsage {
+	plan_id: string;
+	plan_name: string;
+	users_count: number;
+	total_requests: number;
+	total_tokens: number;
+	total_cost: number;
+	revenue: number;
+	profit_margin: number;
+}
+
+export interface UserSpendData {
+	user_id: string | null;
+	user_email: string | null;
+	total_spend: number;
+	total_requests?: number;
+	total_tokens?: number;
+	[key: string]: unknown;
+}
+
+export interface UsageAnalytics {
+	summary: UsageSummary;
+	by_user: UserSpendData[];
+	by_model: ModelUsage[];
+	by_date: DailyUsageData[];
+	by_plan: PlanUsage[];
+}
+
+export async function getUsageAnalytics(days: number = 30): Promise<UsageAnalytics> {
+	return fetchApi<UsageAnalytics>(`/api/admin/usage?days=${days}`);
+}

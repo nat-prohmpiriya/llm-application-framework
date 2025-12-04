@@ -15,7 +15,8 @@
 		ChevronRight,
 		LogOut,
 		User,
-		ArrowLeft
+		ArrowLeft,
+		BarChart3
 	} from 'lucide-svelte';
 
 	let {
@@ -39,6 +40,7 @@
 	const navItems: NavItem[] = [
 		{ label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
 		{ label: 'Users', href: '/admin/users', icon: UserCog },
+		{ label: 'Usage', href: '/admin/usage', icon: BarChart3 },
 		{ label: 'Plans', href: '/admin/plans', icon: CreditCard },
 		{ label: 'Subscriptions', href: '/admin/subscriptions', icon: Users },
 		{ label: 'Settings', href: '/admin/settings', icon: Settings }
