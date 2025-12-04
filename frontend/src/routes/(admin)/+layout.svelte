@@ -13,8 +13,8 @@
 			if (!auth.isAuthenticated) {
 				goto('/login');
 			} else if (!auth.user?.is_superuser) {
-				// Not an admin, redirect to main dashboard
-				goto('/dashboard');
+				// Not an admin, redirect to chat
+				goto('/chat');
 			}
 		}
 	});

@@ -43,7 +43,7 @@
 			}
 
 			await auth.login({ email, password });
-			goto('/dashboard');
+			goto('/chat');
 		} catch (err) {
 			if (err instanceof ApiException) {
 				error = err.message;

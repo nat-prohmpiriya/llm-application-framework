@@ -14,17 +14,17 @@
 		Footer
 	} from '$lib/components/landing';
 
-	// Redirect authenticated users to dashboard
+	// Redirect authenticated users to chat
 	onMount(() => {
 		if (auth.isAuthenticated) {
-			goto('/dashboard');
+			goto('/chat');
 		}
 	});
 
 	// Watch for auth changes
 	$effect(() => {
 		if (!auth.isLoading && auth.isAuthenticated) {
-			goto('/dashboard');
+			goto('/chat');
 		}
 	});
 </script>
