@@ -149,6 +149,8 @@ async def get_available_plans(
             "price_yearly": float(plan.price_yearly) if plan.price_yearly else None,
             "currency": plan.currency,
             "tokens_per_month": plan.tokens_per_month,
+            "requests_per_month": plan.requests_per_month,
+            "credits_per_month": plan.credits_per_month,
             "requests_per_minute": plan.requests_per_minute,
             "requests_per_day": plan.requests_per_day,
             "max_documents": plan.max_documents,

@@ -133,7 +133,7 @@
 
 	// Check if plan is popular
 	function isPopular(plan: BillingPlan): boolean {
-		return plan.plan_type === 'pro';
+		return plan.plan_type === 'starter';
 	}
 
 	onMount(async () => {
@@ -149,7 +149,10 @@
 
 <svelte:head>
 	<title>Pricing - RAG Agent Platform</title>
-	<meta name="description" content="Choose the right plan for your AI needs. Start free and scale as you grow." />
+	<meta
+		name="description"
+		content="Choose the right plan for your AI needs. Start free and scale as you grow."
+	/>
 </svelte:head>
 
 <div class="min-h-screen bg-[#0a0a0b]">
@@ -161,7 +164,9 @@
 				Back to Home
 			</Button>
 			<h1 class="text-3xl md:text-4xl font-bold text-white">Pricing</h1>
-			<p class="text-gray-400 mt-2">Simple, transparent pricing. Start free and scale as you grow.</p>
+			<p class="text-gray-400 mt-2">
+				Simple, transparent pricing. Start free and scale as you grow.
+			</p>
 		</div>
 	</div>
 
@@ -169,14 +174,26 @@
 	<div class="container mx-auto px-4 py-12">
 		<!-- Billing Toggle -->
 		<div class="flex justify-center mb-12">
-			<Tabs.Root value={billingInterval} onValueChange={(v) => (billingInterval = v as 'monthly' | 'yearly')}>
+			<Tabs.Root
+				value={billingInterval}
+				onValueChange={(v) => (billingInterval = v as 'monthly' | 'yearly')}
+			>
 				<Tabs.List class="bg-white/5 border border-white/10">
-					<Tabs.Trigger value="monthly" class="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
+					<Tabs.Trigger
+						value="monthly"
+						class="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+					>
 						Monthly
 					</Tabs.Trigger>
-					<Tabs.Trigger value="yearly" class="data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
+					<Tabs.Trigger
+						value="yearly"
+						class="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
+					>
 						Yearly
-						<Badge variant="secondary" class="ml-2 bg-green-500/20 text-green-400 border-green-500/30">
+						<Badge
+							variant="secondary"
+							class="ml-2 bg-green-500/20 text-green-400 border-green-500/30"
+						>
 							Save 20%
 						</Badge>
 					</Tabs.Trigger>
@@ -213,17 +230,19 @@
 				<p class="text-gray-400">No plans available at the moment.</p>
 			</div>
 		{:else}
-			<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
+			<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
 				{#each plans as plan (plan.id)}
 					<div
-						class="relative p-6 rounded-2xl border transition-all duration-300
+						class="relative p-6 rounded-2xl border transition-all duration-300 flex flex-col
 							{isPopular(plan)
-								? 'border-indigo-500/50 bg-gradient-to-b from-indigo-500/10 to-transparent lg:scale-105'
-								: 'border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20'}"
+							? 'border-indigo-500/50 bg-gradient-to-b from-indigo-500/10 to-transparent lg:scale-105'
+							: 'border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20'}"
 					>
 						{#if isPopular(plan)}
 							<div class="absolute -top-4 left-1/2 -translate-x-1/2">
-								<div class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-medium">
+								<div
+									class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-medium"
+								>
 									<Sparkles class="h-3 w-3" />
 									Most Popular
 								</div>
@@ -232,19 +251,25 @@
 
 						<!-- Plan Header -->
 						<div class="mb-4">
-							<h3 class="text-lg font-semibold text-white mb-2">{plan.display_name}</h3>
+							<h3 class="text-lg font-semibold text-white mb-2">
+								{plan.display_name}
+							</h3>
 							<div class="flex items-baseline gap-1">
 								{#if plan.plan_type === 'enterprise'}
 									<span class="text-4xl font-bold text-white">Custom</span>
 								{:else}
-									<span class="text-4xl font-bold text-white">{formatCurrency(getPrice(plan))}</span>
+									<span class="text-4xl font-bold text-white"
+										>{formatCurrency(getPrice(plan))}</span
+									>
 									<span class="text-gray-500 text-sm">/month</span>
 								{/if}
 							</div>
 							{#if billingInterval === 'yearly' && plan.price_yearly && plan.plan_type !== 'enterprise'}
 								<p class="text-green-400 text-sm mt-1">
 									{formatCurrency(plan.price_yearly)} billed yearly
-									<span class="text-green-500">(Save {getYearlySavings(plan)}%)</span>
+									<span class="text-green-500"
+										>(Save {getYearlySavings(plan)}%)</span
+									>
 								</p>
 							{/if}
 							{#if plan.description}
@@ -253,7 +278,7 @@
 						</div>
 
 						<!-- Features -->
-						<ul class="space-y-2 mb-6">
+						<ul class="space-y-2 flex-1 mb-8">
 							{#each getPlanFeatures(plan) as feature}
 								<li class="flex items-center gap-2 text-sm text-gray-300">
 									<Check class="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
@@ -262,66 +287,88 @@
 							{/each}
 						</ul>
 
-						<!-- Models Badge -->
-						{#if plan.allowed_models.length > 0}
-							<div class="mb-4 pb-4 border-b border-white/10">
-								<p class="text-xs text-gray-500 mb-2">Available Models</p>
-								<div class="flex flex-wrap gap-1">
-									{#each plan.allowed_models.slice(0, 3) as model}
-										<Badge variant="outline" class="text-xs border-white/20 text-gray-400">
-											{model.split('/').pop()}
-										</Badge>
-									{/each}
-									{#if plan.allowed_models.length > 3}
-										<Badge variant="outline" class="text-xs border-white/20 text-gray-400">
-											+{plan.allowed_models.length - 3} more
-										</Badge>
-									{/if}
+						<!-- Models Badge + CTA (always at bottom) -->
+						<div class="mt-auto">
+							{#if plan.allowed_models.length > 0}
+								<div class="pt-4 border-t border-white/10">
+									<p class="text-xs text-gray-500 mb-2">Available Models</p>
+									<div class="flex flex-wrap gap-1">
+										{#each plan.allowed_models.slice(0, 3) as model}
+											<Badge
+												variant="outline"
+												class="text-xs border-white/20 text-gray-400"
+											>
+												{model.split('/').pop()}
+											</Badge>
+										{/each}
+										{#if plan.allowed_models.length > 3}
+											<Badge
+												variant="outline"
+												class="text-xs border-white/20 text-gray-400"
+											>
+												+{plan.allowed_models.length - 3} more
+											</Badge>
+										{/if}
+									</div>
 								</div>
-							</div>
-						{/if}
+							{/if}
 
-						<!-- CTA -->
-						<Button
-							onclick={() => handleCheckout(plan)}
-							disabled={checkoutLoading !== null}
-							variant={isPopular(plan) ? 'default' : 'outline'}
-							class="w-full {isPopular(plan)
-								? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-								: 'border-white/20 text-gray-300 hover:bg-white/5 hover:text-white'}"
-						>
-							{getCtaText(plan)}
-						</Button>
+							<!-- CTA -->
+							<div class="pt-4">
+								<Button
+									onclick={() => handleCheckout(plan)}
+									disabled={checkoutLoading !== null}
+									variant={isPopular(plan) ? 'default' : 'outline'}
+									class="w-full {isPopular(plan)
+										? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+										: 'bg-white/10 border-white/20 text-white hover:bg-white/20'}"
+								>
+									{getCtaText(plan)}
+								</Button>
+							</div>
+						</div>
 					</div>
 				{/each}
 			</div>
 
 			<!-- FAQ Section -->
 			<div class="max-w-3xl mx-auto mt-20">
-				<h2 class="text-2xl font-bold text-white text-center mb-8">Frequently Asked Questions</h2>
+				<h2 class="text-2xl font-bold text-white text-center mb-8">
+					Frequently Asked Questions
+				</h2>
 				<div class="space-y-4">
 					<div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
 						<h3 class="font-semibold text-white mb-2">Can I change plans later?</h3>
 						<p class="text-gray-400 text-sm">
-							Yes! You can upgrade or downgrade your plan at any time. When upgrading, you'll be charged the prorated difference. When downgrading, changes take effect at the end of your billing cycle.
+							Yes! You can upgrade or downgrade your plan at any time. When upgrading,
+							you'll be charged the prorated difference. When downgrading, changes
+							take effect at the end of your billing cycle.
 						</p>
 					</div>
 					<div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
-						<h3 class="font-semibold text-white mb-2">What payment methods do you accept?</h3>
+						<h3 class="font-semibold text-white mb-2">
+							What payment methods do you accept?
+						</h3>
 						<p class="text-gray-400 text-sm">
-							We accept all major credit cards (Visa, MasterCard, American Express) through our secure payment processor, Stripe.
+							We accept all major credit cards (Visa, MasterCard, American Express)
+							through our secure payment processor, Stripe.
 						</p>
 					</div>
 					<div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
 						<h3 class="font-semibold text-white mb-2">Is there a free trial?</h3>
 						<p class="text-gray-400 text-sm">
-							Our Free plan lets you try the platform with limited features. For Pro features, we offer a 14-day free trial so you can test everything before committing.
+							Our Free plan lets you try the platform with limited features. For Pro
+							features, we offer a 14-day free trial so you can test everything before
+							committing.
 						</p>
 					</div>
 					<div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02]">
-						<h3 class="font-semibold text-white mb-2">What happens if I exceed my limits?</h3>
+						<h3 class="font-semibold text-white mb-2">
+							What happens if I exceed my limits?
+						</h3>
 						<p class="text-gray-400 text-sm">
-							We'll notify you when you're approaching your limits. You can upgrade your plan or wait until the next billing cycle for your limits to reset.
+							We'll notify you when you're approaching your limits. You can upgrade
+							your plan or wait until the next billing cycle for your limits to reset.
 						</p>
 					</div>
 				</div>
