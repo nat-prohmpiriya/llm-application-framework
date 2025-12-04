@@ -103,7 +103,7 @@ Overview page with key metrics.
 
 ---
 
-### [] Task 5: Plan List Page
+### [x] Task 5: Plan List Page
 
 Admin page to view and manage plans.
 
