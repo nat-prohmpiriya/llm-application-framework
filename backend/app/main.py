@@ -1,8 +1,10 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.core.context import get_context
@@ -108,7 +110,11 @@ app.include_router(admin_users.router, prefix="/api/admin")
 # Webhook routers
 app.include_router(webhooks.router, prefix="/api")
 
-
-@app.get("/")
-async def root() -> dict[str, str]:
-    return {"message": "RAG Agent Platform API", "version": "0.1.0", "status": "Server is running"}
+# Serve static files (frontend) - must be last to not override API routes
+if settings.serve_static_files and os.path.exists(settings.static_files_path):
+    app.mount("/", StaticFiles(directory=settings.static_files_path, html=True), name="static")
+else:
+    # Default root endpoint when not serving static files
+    @app.get("/")
+    async def root() -> dict[str, str]:
+        return {"message": "RAG Agent Platform API", "version": "0.1.0", "status": "Server is running"}

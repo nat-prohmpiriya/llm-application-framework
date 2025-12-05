@@ -1,0 +1,87 @@
+# =============================================================================
+# Docker ignore file for RAG Agent Platform
+# =============================================================================
+
+# Git
+.git
+.gitignore
+
+# Documentation
+.docs
+*.md
+!README.md
+
+# IDE & Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Environment files (will be passed at runtime)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/.venv
+backend/venv
+backend/.pytest_cache
+backend/.coverage
+backend/htmlcov
+backend/.mypy_cache
+backend/.ruff_cache
+*.egg-info
+dist
+build
+
+# Node.js
+frontend/node_modules
+frontend/.svelte-kit
+frontend/build
+frontend/.env
+frontend/.env.*
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+coverage.xml
+*.cover
+
+# Logs
+*.log
+logs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*.yaml
+docker-compose*.yml
+
+# Claude/AI
+.claude
+
+# Scripts (not needed in container)
+scripts
+
+# Infra configs (mounted separately)
+infra
+
+# Uploads (mounted as volume)
+uploads
+backend/uploads
+
+# Temporary files
+*.tmp
+*.temp
+tmp
+temp

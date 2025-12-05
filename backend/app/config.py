@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     storage_type: str = "local"
     storage_local_path: str = "./uploads"
 
+    # Static files (frontend)
+    static_files_path: str = "./static"
+    serve_static_files: bool = False
+
     # Embedding (via LiteLLM)
     embedding_model: str = "text-embedding-004"
     embedding_dimension: int = 768

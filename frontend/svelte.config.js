@@ -10,7 +10,11 @@ const config = {
 		adapter: adapter({
 			// SPA mode - fallback to index.html for all routes
 			fallback: 'index.html'
-		})
+		}),
+		prerender: {
+			// Ignore dynamic routes that can't be prerendered
+			handleUnseenRoutes: 'warn'
+		}
 	}
 };
 

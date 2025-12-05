@@ -1,8 +1,58 @@
 # RAG Agent Platform - Development Docker Compose
 # Usage: docker compose up -d
 # With monitoring: docker compose --profile monitoring up -d
+# With app: docker compose --profile app up -d
 
 services:
+  # ===========================================
+  # Application (Frontend + Backend combined)
+  # ===========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ragagent-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+      DATABASE_URL: "postgresql+asyncpg://ragagent:ragagent123@postgres:5432/ragagent"
+      LITELLM_API_URL: "http://litellm:4000"
+      LITELLM_API_KEY: ${LITELLM_MASTER_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key-min-32-chars-change-in-production}
+      CORS_ORIGINS: '["http://localhost:8000"]'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: rag-agent-backend
+      OTEL_EXPORTER_ENDPOINT: "http://jaeger:4317"
+      SERVE_STATIC_FILES: "true"
+      STATIC_FILES_PATH: "./static"
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+    volumes:
+      - app-uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - app-network
+    profiles:
+      - app
+
   # ===========================================
   # Backend Database (PostgreSQL)
   # ===========================================
@@ -192,6 +242,8 @@ volumes:
     name: ragagent-prometheus-data
   grafana-data:
     name: ragagent-grafana-data
+  app-uploads:
+    name: ragagent-app-uploads
 
 networks:
   app-network:
