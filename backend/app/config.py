@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,7 +30,22 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = 7
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: str | list[str] = "http://localhost:5173,http://localhost:3000"
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
+        """Parse CORS origins from string or list."""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            # Handle JSON format
+            if v.startswith("["):
+                import json
+                return json.loads(v)
+            # Handle comma-separated format
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return []
 
     # OpenTelemetry
     otel_enabled: bool = False  # Enable when Jaeger is running
